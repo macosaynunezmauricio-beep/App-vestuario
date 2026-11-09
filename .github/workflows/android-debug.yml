@@ -15,7 +15,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - name: Verificar Android SDK
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME}"
+          test -d "${ANDROID_HOME}/platforms" || { echo "No se encontró el SDK de Android"; exit 1; }
+          test -x "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" || { echo "No se encontró sdkmanager"; exit 1; }
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --version
       - name: Instalar dependencias
         run: npm install --no-audit --no-fund
       - name: Generar proyecto Android
@@ -25,6 +30,7 @@ jobs:
       - name: Compilar APK de prueba
         run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: mi-armario-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
