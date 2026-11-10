@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#151b25"><title>Mi Armario 5.3</title><style>body{font-family:system-ui,sans-serif;background:#f5f5f2;color:#20242b;margin:0}header{background:#151b25;color:white;padding:22px 18px}header h1{margin:0;font-size:25px}header p{opacity:.75;margin:6px 0 0}.wrap{max-width:850px;margin:auto;padding:16px}nav{display:flex;gap:8px;margin-bottom:20px}button{border:0;border-radius:12px;padding:12px 16px;background:#252f41;color:white;font-weight:650;cursor:pointer}nav button{flex:1;background:#e3e6e9;color:#222}nav button.active{background:#252f41;color:white}.panel{background:white;border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 2px 10px #0000000a}input,select{box-sizing:border-box;width:100%;border:1px solid #d8dce2;border-radius:10px;padding:12px;margin:6px 0 12px;font:inherit}label{font-size:13px;font-weight:650}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:12px}.item{border:1px solid #e8e9eb;border-radius:13px;overflow:hidden;background:white}.item img{width:100%;height:145px;object-fit:contain;background:#f1f2f3}.item .info{padding:9px;font-size:13px}.muted{color:#6b7280;font-size:13px}.row{display:flex;gap:10px;align-items:center;justify-content:space-between}.secondary{background:#e7e9ec;color:#263040}.danger{background:#fbe5e5;color:#a52828}.hidden{display:none}.outfit{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:8px}.outfit img{width:100%;height:130px;object-fit:contain;background:#f3f4f5;border-radius:10px}small{color:#6b7280}#status{margin:12px 0;color:#37614a}.preview{max-width:230px;max-height:240px;object-fit:contain;background:repeating-conic-gradient(#e7e7e7 0% 25%,#fff 0% 50%) 50%/20px 20px;border-radius:12px;display:block;margin:12px 0}.preview[hidden]{display:none}.checkrow{display:flex;gap:9px;align-items:center;margin:12px 0}.checkrow input{width:auto;margin:0} @media(max-width:450px){nav{flex-wrap:wrap}nav button{flex:1 1 28%}nav button{padding:11px 4px;font-size:12px}.wrap{padding:10px}.panel{padding:14px}}.trycanvas{width:100%;max-width:480px;display:block;margin:12px auto;border-radius:14px;background:#eef0f2;touch-action:none}.trycontrols{display:grid;grid-template-columns:1fr 1fr;gap:10px}.trycontrols input{margin:4px 0 12px} </style></head><body><header><div style="max-width:850px;margin:auto"><h1>Mi Armario 5.3 ✦</h1><p>Tu ropa, nuevas combinaciones.</p></div></header><main class="wrap"><nav><button class="active" data-tab="closet">Armario</button><button data-tab="add">Añadir</button><button data-tab="style">Combinar</button><button data-tab="saved">Favoritos</button><button data-tab="tryon">Probador</button></nav><div id="status" role="status"></div><section id="closet"><div class="panel"><div class="row"><h2>Mis prendas</h2><span id="count" class="muted"></span></div><select id="filter"><option value="">Todas las categorías</option><option>Superior</option><option>Inferior</option><option>Calzado</option><option>Accesorio</option><option>Exterior</option></select><div id="items" class="grid"></div></div></section><section id="add" class="hidden"><div class="panel"><h2>Añadir una prenda</h2><p class="muted">Reconocimiento visual experimental: identifica el tipo de prenda mediante un modelo CLIP ejecutado en tu dispositivo y estima el color. Los resultados pueden equivocarse.</p><form id="addform"><label>Fotografía</label><input id="photo" type="file" accept="image/*" required><button type="button" id="recognize" class="secondary">✦ Reconocer prenda con IA</button><p id="aiStatus" class="muted" role="status">Selecciona una foto y pulsa Reconocer. La primera vez se descargará un modelo de IA; requiere internet y puede tardar.</p><div class="checkrow"><input id="removeBgOnSave" type="checkbox" checked><label for="removeBgOnSave">Quitar fondo al guardar (revisar después con el editor)</label></div><button type="button" id="removeBg" class="secondary">✂ Quitar fondo ahora</button><p id="bgStatus" class="muted" role="status">La primera vez se descargará un modelo. La fotografía se procesa en tu dispositivo.</p><img id="preview" class="preview" alt="Vista previa de la prenda" hidden><div id="maskEditor" class="hidden" style="border:1px solid #d8dce2;border-radius:14px;padding:12px;margin:12px 0;background:#fafbfc"><h3>Editar recorte manualmente</h3><p class="muted">El recorte de fondo puede conservar la persona que lleva puesta la camisa. Borra las zonas sobrantes con el dedo. Para mayor precisión, fotografía la prenda sola sobre una superficie contrastante.</p><canvas id="maskCanvas" style="display:block;width:100%;max-width:420px;margin:auto;background:repeating-conic-gradient(#e1e5e9 0% 25%,#fff 0% 50%) 50%/20px 20px;touch-action:none;border-radius:10px"></canvas><div class="trycontrols"><div><label for="brushSize">Tamaño del pincel</label><input id="brushSize" type="range" min="5" max="120" value="35"></div><div><label for="maskMode">Herramienta</label><select id="maskMode"><option value="erase">Borrar</option><option value="restore">Recuperar</option></select></div></div><button type="button" id="maskUndo" class="secondary">Deshacer</button> <button type="button" id="maskReset" class="secondary">Reiniciar máscara</button> <button type="button" id="maskApply">Aplicar recorte</button><p id="maskStatus" class="muted" role="status"></p></div><button type="button" id="restorePhoto" class="secondary hidden">Restaurar fotografía original</button><label>Nombre</label><input id="name" maxlength="60" placeholder="Ej. Camisa blanca" required><label>Categoría</label><select id="category"><option>Superior</option><option>Inferior</option><option>Calzado</option><option>Accesorio</option><option>Exterior</option></select><label>Color</label><select id="color"><option>Negro</option><option>Blanco</option><option>Gris</option><option>Azul</option><option>Beige</option><option>Café</option><option>Verde</option><option>Rojo</option><option>Rosa</option><option>Amarillo</option><option>Otro</option></select><label>Estilo</label><select id="styleInput"><option>Casual</option><option>Formal</option><option>Deportivo</option><option>Versátil</option></select><button type="submit">Guardar prenda</button></form></div></section><section id="style" class="hidden"><div class="panel"><h2>Crear un outfit</h2><p class="muted">Combinaciones basadas en las prendas que registraste. No requiere conexión a un servicio de IA.</p><label>Ocasión</label><select id="occasion"><option>Casual</option><option>Formal</option><option>Deportivo</option></select><button id="generate">Generar combinación</button><div id="suggestion" style="margin-top:16px"></div></div></section><section id="tryon" class="hidden"><div class="panel"><h2>Probador con tu fotografía</h2><p class="muted">Sube una foto de cuerpo entero, selecciona una prenda de tu armario y colócala sobre tu imagen. Puedes arrastrar la prenda, ajustar su tamaño y descargar el resultado. Es una superposición visual, no una simulación realista de cómo queda puesta.</p><label for="personPhoto">Tu fotografía</label><input type="file" id="personPhoto" accept="image/*"><label for="tryGarment">Prenda para probar</label><select id="tryGarment"><option value="">Selecciona una prenda</option></select><div class="panel" style="border:1px solid #c6d3ed;background:#f0f5ff;margin:15px 0"><h3>✨ Probador generativo CatVTON</h3><p class="muted">Selecciona tu fotografía y una prenda arriba. La aplicación envía las imágenes a tu servidor puente y este solicita la generación a CatVTON. Las fotografías se transmiten al servicio externo.</p><div style="background:#f6f8fc;border:1px solid #cbd5e1;border-radius:12px;padding:14px;margin:14px 0"><h3>Prueba gratuita sin servidor propio</h3><p class="muted">Usa el demo público oficial de CatVTON en Hugging Face ZeroGPU. Descarga tus dos imágenes y súbelas al demo. Este modo NO conecta automáticamente Mi Armario con el modelo; el resultado se descarga desde el demo. Las imágenes se procesarán en infraestructura de terceros, por lo que evita fotos sensibles.</p><button type="button" id="freePerson" class="secondary">1. Descargar mi foto</button> <button type="button" id="freeGarment" class="secondary">2. Descargar prenda</button><p><a href="https://huggingface.co/spaces/zhengchong/CatVTON" target="_blank" rel="noopener noreferrer">3. Abrir CatVTON oficial (gratis, con cuota y posibles colas) ↗</a></p><p id="freeTryStatus" class="muted" role="status"></p></div><label for="serverUrl">URL de tu servidor puente HTTPS</label><input id="serverUrl" type="url" placeholder="https://tu-usuario-mi-armario.hf.space"><label for="serverKey">Clave privada del servidor</label><input id="serverKey" type="password" autocomplete="off" placeholder="Clave opcional"><label for="clothType">Tipo de prenda</label><select id="clothType"><option value="upper">Superior</option><option value="lower">Inferior</option><option value="overall">Vestido / conjunto entero</option></select><button id="generateRealTryon" type="button">✨ Probar en mí con IA</button><p id="realTryStatus" role="status" class="muted"></p><img id="realTryResult" alt="Resultado del probador generativo" style="display:none;max-width:100%;max-height:600px;object-fit:contain;border-radius:12px"><p><a id="realTryDownload" download="mi-armario-ia.png" style="display:none" href="#">Descargar resultado</a></p></div><canvas id="tryCanvas" class="trycanvas" width="600" height="800" aria-label="Vista previa de tu fotografía con la prenda superpuesta"></canvas><div class="trycontrols"><div><label for="trySize">Tamaño</label><input id="trySize" type="range" min="10" max="140" value="55"></div><div><label for="tryRotation">Rotación</label><input id="tryRotation" type="range" min="-45" max="45" value="0"></div><div><label for="tryX">Horizontal</label><input id="tryX" type="range" min="0" max="100" value="50"></div><div><label for="tryY">Vertical</label><input id="tryY" type="range" min="0" max="100" value="38"></div></div><button type="button" id="tryDownload">Descargar imagen</button><button type="button" class="secondary" id="tryReset">Restablecer posición</button><p id="tryStatus" class="muted" role="status">Las fotografías se procesan localmente. Para un resultado más limpio, utiliza prendas con fondo transparente.</p></div></section><section id="saved" class="hidden"><div class="panel"><h2>Outfits favoritos</h2><div id="favorites"></div></div></section><p class="muted">El recorte de fondo NO identifica automáticamente una camisa separada de quien la lleva puesta. Revisa y edita la máscara antes de guardar. El recorte automático es experimental y puede tardar o fallar en algunos teléfonos. Si falla, se guarda la foto original. Tus datos se guardan localmente en este navegador. Para evitar perderlos, no borres los datos del sitio. Las fotografías no se suben a ningún servidor de análisis; el modelo se descarga al dispositivo desde un proveedor externo. La IA requiere conexión inicial y un navegador compatible.</p></main><script>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#151b25"><title>Mi Armario 5.4 beta</title><style>body{font-family:system-ui,sans-serif;background:#f5f5f2;color:#20242b;margin:0}header{background:#151b25;color:white;padding:22px 18px}header h1{margin:0;font-size:25px}header p{opacity:.75;margin:6px 0 0}.wrap{max-width:850px;margin:auto;padding:16px}nav{display:flex;gap:8px;margin-bottom:20px}button{border:0;border-radius:12px;padding:12px 16px;background:#252f41;color:white;font-weight:650;cursor:pointer}nav button{flex:1;background:#e3e6e9;color:#222}nav button.active{background:#252f41;color:white}.panel{background:white;border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 2px 10px #0000000a}input,select{box-sizing:border-box;width:100%;border:1px solid #d8dce2;border-radius:10px;padding:12px;margin:6px 0 12px;font:inherit}label{font-size:13px;font-weight:650}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:12px}.item{border:1px solid #e8e9eb;border-radius:13px;overflow:hidden;background:white}.item img{width:100%;height:145px;object-fit:contain;background:#f1f2f3}.item .info{padding:9px;font-size:13px}.muted{color:#6b7280;font-size:13px}.row{display:flex;gap:10px;align-items:center;justify-content:space-between}.secondary{background:#e7e9ec;color:#263040}.danger{background:#fbe5e5;color:#a52828}.hidden{display:none}.outfit{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:8px}.outfit img{width:100%;height:130px;object-fit:contain;background:#f3f4f5;border-radius:10px}small{color:#6b7280}#status{margin:12px 0;color:#37614a}.preview{max-width:230px;max-height:240px;object-fit:contain;background:repeating-conic-gradient(#e7e7e7 0% 25%,#fff 0% 50%) 50%/20px 20px;border-radius:12px;display:block;margin:12px 0}.preview[hidden]{display:none}.checkrow{display:flex;gap:9px;align-items:center;margin:12px 0}.checkrow input{width:auto;margin:0} @media(max-width:450px){nav{flex-wrap:wrap}nav button{flex:1 1 28%}nav button{padding:11px 4px;font-size:12px}.wrap{padding:10px}.panel{padding:14px}}.trycanvas{width:100%;max-width:480px;display:block;margin:12px auto;border-radius:14px;background:#eef0f2;touch-action:none}.trycontrols{display:grid;grid-template-columns:1fr 1fr;gap:10px}.trycontrols input{margin:4px 0 12px} nav{position:fixed;bottom:0;left:0;right:0;z-index:2;background:#fff;box-shadow:0 -2px 12px #0002;margin:0;padding:8px 8px calc(8px + env(safe-area-inset-bottom));flex-wrap:nowrap}nav button{flex:1 1 0;min-width:0;padding:12px 4px}.wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom))}#addClothes{margin-bottom:12px}#importBackup{display:block;margin-top:10px}#exportBackup{display:block;margin-bottom:12px}</style></head><body><header><div style="max-width:850px;margin:auto"><h1>Mi Armario 5.4 beta ✦</h1><p>Tu ropa, nuevas combinaciones.</p></div></header><main class="wrap"><nav aria-label="Navegación principal"><button class="active" data-tab="home">Inicio</button><button data-tab="closet">Armario</button><button data-tab="style">Combinar</button><button data-tab="tryon">Probador</button></nav><div id="status" role="status"></div><button id="addClothes" type="button">Añadir prenda</button><section id="home"><div class="panel"><h2>Tu armario</h2><button id="showFavorites" class="secondary">Outfits favoritos</button></div><div class="panel"><h2>Copia de seguridad</h2><button id="exportBackup">Exportar copia</button><label for="importBackup">Importar y combinar con el armario</label><input id="importBackup" type="file" accept=".json,application/json"></div></section><section id="closet" class="hidden"><div class="panel"><div class="row"><h2>Mis prendas</h2><span id="count" class="muted"></span></div><input id="searchClothes" type="search" placeholder="Buscar prendas" aria-label="Buscar prendas"><select id="filter" aria-label="Categoría"><option value="">Todas las categorías</option><option>Superior</option><option>Inferior</option><option>Calzado</option><option>Accesorio</option><option>Exterior</option></select><div id="items" class="grid"></div></div></section><section id="add" class="hidden"><div class="panel"><h2>Añadir una prenda</h2><form id="addform"><h3>1. Elige una foto</h3><label for="photo">Galería</label><input id="photo" type="file" accept="image/*"><label for="cameraPhoto">Cámara</label><input id="cameraPhoto" type="file" accept="image/*" capture="environment"><h3>2. Revisa y recorta</h3><button type="button" id="recognize" class="secondary">Sugerir categoría</button><p id="aiStatus" class="muted" role="status">Opcional. Requiere conexión para cargar el clasificador.</p><button type="button" id="removeBg" class="secondary">Editar recorte</button><p id="bgStatus" class="muted" role="status">Editor manual sin conexión. La segmentación automática de prendas está pendiente.</p><img id="preview" class="preview" alt="Vista previa de la prenda" hidden><div id="maskEditor" class="hidden" style="border:1px solid #d8dce2;border-radius:14px;padding:12px;margin:12px 0;background:#fafbfc"><h3>Corregir selección de prenda</h3><p class="muted">Borra el fondo y recupera cualquier zona de la foto con el pincel.</p><canvas id="maskCanvas" style="display:block;width:100%;max-width:420px;margin:auto;background:repeating-conic-gradient(#e1e5e9 0% 25%,#fff 0% 50%) 50%/20px 20px;touch-action:none;border-radius:10px"></canvas><div class="trycontrols"><div><label for="brushSize">Tamaño del pincel</label><input id="brushSize" type="range" min="5" max="120" value="35"></div><div><label for="maskMode">Herramienta</label><select id="maskMode"><option value="erase">Borrar</option><option value="restore">Recuperar</option></select></div><div><label for="edgeSoftness">Suavizado del pincel</label><input id="edgeSoftness" type="range" min="0" max="100" value="25"></div></div><button type="button" id="maskUndo" class="secondary">Deshacer</button> <button type="button" id="maskRedo" class="secondary">Rehacer</button> <button type="button" id="maskReset" class="secondary">Reiniciar máscara</button> <button type="button" id="maskApply">Aplicar recorte</button><p id="maskStatus" class="muted" role="status"></p></div><button type="button" id="restorePhoto" class="secondary hidden">Restaurar fotografía original</button><label>Nombre</label><input id="name" maxlength="60" placeholder="Ej. Camisa blanca" required><label>Categoría</label><select id="category"><option>Superior</option><option>Inferior</option><option>Calzado</option><option>Accesorio</option><option>Exterior</option></select><label>Color</label><select id="color"><option>Negro</option><option>Blanco</option><option>Gris</option><option>Azul</option><option>Beige</option><option>Café</option><option>Verde</option><option>Rojo</option><option>Rosa</option><option>Amarillo</option><option>Otro</option></select><label>Estilo</label><select id="styleInput"><option>Casual</option><option>Formal</option><option>Deportivo</option><option>Versátil</option></select><h3>3. Guarda en tu armario</h3><button type="submit">Guardar prenda</button></form></div></section><section id="style" class="hidden"><div class="panel"><h2>Crear un outfit</h2><p class="muted">Combinaciones basadas en las prendas que registraste. No requiere conexión a un servicio de IA.</p><label>Ocasión</label><select id="occasion"><option>Casual</option><option>Formal</option><option>Deportivo</option></select><button id="generate">Generar combinación</button><div id="suggestion" style="margin-top:16px"></div></div></section><section id="tryon" class="hidden"><div class="panel"><h2>Probador con tu fotografía</h2><p class="muted">Sube una foto de cuerpo entero, selecciona una prenda de tu armario y colócala sobre tu imagen. Puedes arrastrar la prenda, ajustar su tamaño y descargar el resultado. Es una superposición visual, no una simulación realista de cómo queda puesta.</p><label for="personPhoto">Tu fotografía</label><input type="file" id="personPhoto" accept="image/*"><label for="tryGarment">Prenda para probar</label><select id="tryGarment"><option value="">Selecciona una prenda</option></select><div class="panel" style="border:1px solid #c6d3ed;background:#f0f5ff;margin:15px 0"><h3>✨ Probador generativo CatVTON</h3><p class="muted">Selecciona tu fotografía y una prenda arriba. La aplicación envía las imágenes a tu servidor puente y este solicita la generación a CatVTON. Las fotografías se transmiten al servicio externo.</p><div style="background:#f6f8fc;border:1px solid #cbd5e1;border-radius:12px;padding:14px;margin:14px 0"><h3>Prueba gratuita sin servidor propio</h3><p class="muted">Usa el demo público oficial de CatVTON en Hugging Face ZeroGPU. Descarga tus dos imágenes y súbelas al demo. Este modo NO conecta automáticamente Mi Armario con el modelo; el resultado se descarga desde el demo. Las imágenes se procesarán en infraestructura de terceros, por lo que evita fotos sensibles.</p><button type="button" id="freePerson" class="secondary">1. Descargar mi foto</button> <button type="button" id="freeGarment" class="secondary">2. Descargar prenda</button><p><a href="https://huggingface.co/spaces/zhengchong/CatVTON" target="_blank" rel="noopener noreferrer">3. Abrir CatVTON oficial (gratis, con cuota y posibles colas) ↗</a></p><p id="freeTryStatus" class="muted" role="status"></p></div><label for="serverUrl">URL de tu servidor puente HTTPS</label><input id="serverUrl" type="url" placeholder="https://tu-usuario-mi-armario.hf.space"><label for="serverKey">Clave privada del servidor</label><input id="serverKey" type="password" autocomplete="off" placeholder="Clave opcional"><label for="clothType">Tipo de prenda</label><select id="clothType"><option value="upper">Superior</option><option value="lower">Inferior</option><option value="overall">Vestido / conjunto entero</option></select><button id="generateRealTryon" type="button">✨ Probar en mí con IA</button><p id="realTryStatus" role="status" class="muted"></p><img id="realTryResult" alt="Resultado del probador generativo" style="display:none;max-width:100%;max-height:600px;object-fit:contain;border-radius:12px"><p><a id="realTryDownload" download="mi-armario-ia.png" style="display:none" href="#">Descargar resultado</a></p></div><canvas id="tryCanvas" class="trycanvas" width="600" height="800" aria-label="Vista previa de tu fotografía con la prenda superpuesta"></canvas><div class="trycontrols"><div><label for="trySize">Tamaño</label><input id="trySize" type="range" min="10" max="140" value="55"></div><div><label for="tryRotation">Rotación</label><input id="tryRotation" type="range" min="-45" max="45" value="0"></div><div><label for="tryX">Horizontal</label><input id="tryX" type="range" min="0" max="100" value="50"></div><div><label for="tryY">Vertical</label><input id="tryY" type="range" min="0" max="100" value="38"></div></div><button type="button" id="tryDownload">Descargar imagen</button><button type="button" class="secondary" id="tryReset">Restablecer posición</button><p id="tryStatus" class="muted" role="status">Las fotografías se procesan localmente. Para un resultado más limpio, utiliza prendas con fondo transparente.</p></div></section><section id="saved" class="hidden"><div class="panel"><h2>Outfits favoritos</h2><div id="favorites"></div></div></section></main><script src="backup.js"></script><script>
 const $ = selector => document.querySelector(selector);
 // Clasificación visual real en el navegador mediante CLIP; no se envía la foto a un servidor de análisis.
 let classifierPromise=null;
@@ -9,58 +9,206 @@ const candidates=[
  ['Exterior','Chamarra','a photo of a jacket'],['Exterior','Abrigo','a photo of a coat'],['Exterior','Blazer','a photo of a blazer'],
  ['Accesorio','Gorra','a photo of a cap'],['Accesorio','Bolso','a photo of a bag'],['Accesorio','Cinturón','a photo of a belt']
 ];
-function guessColor(img){const c=document.createElement('canvas');c.width=64;c.height=64;const ctx=c.getContext('2d');ctx.drawImage(img,0,0,64,64);const data=ctx.getImageData(0,0,64,64).data;let votes={};for(let i=0;i<data.length;i+=16){let r=data[i],g=data[i+1],b=data[i+2];let max=Math.max(r,g,b),min=Math.min(r,g,b),diff=max-min; if(max>242&&diff<16)continue;let name;if(max<60)name='Negro';else if(diff<20)name=max>190?'Blanco':'Gris';else if(r>g*1.35&&r>b*1.3)name='Rojo';else if(b>r*1.25&&b>g*1.12)name='Azul';else if(g>r*1.18&&g>b*1.1)name='Verde';else if(r>155&&g>115&&b<120)name='Amarillo';else if(r>145&&b>110&&r>g*1.18)name='Rosa';else if(r>g&&g>b&&r-g<85)name=max>165?'Beige':'Café';else name='Otro';votes[name]=(votes[name]||0)+1}return Object.entries(votes).sort((a,b)=>b[1]-a[1])[0]?.[0]||'Otro'}
+function guessColor(img){const c=document.createElement('canvas');c.width=64;c.height=64;const ctx=c.getContext('2d');ctx.drawImage(img,0,0,64,64);const data=ctx.getImageData(0,0,64,64).data;let votes={};for(let i=0;i<data.length;i+=16){let r=data[i],g=data[i+1],b=data[i+2];let max=Math.max(r,g,b),min=Math.min(r,g,b),diff=max-min; if(data[i+3]<192)continue;let name;if(max<60)name='Negro';else if(diff<20)name=max>190?'Blanco':'Gris';else if(r>g*1.35&&r>b*1.3)name='Rojo';else if(b>r*1.25&&b>g*1.12)name='Azul';else if(g>r*1.18&&g>b*1.1)name='Verde';else if(r>155&&g>115&&b<120)name='Amarillo';else if(r>145&&b>110&&r>g*1.18)name='Rosa';else if(r>g&&g>b&&r-g<85)name=max>165?'Beige':'Café';else name='Otro';votes[name]=(votes[name]||0)+1}return Object.entries(votes).sort((a,b)=>b[1]-a[1])[0]?.[0]||'Otro'}
 async function loadClassifier(){if(!classifierPromise){classifierPromise=import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2').then(async m=>m.pipeline('zero-shot-image-classification','Xenova/clip-vit-base-patch32',{quantized:true})).catch(e=>{classifierPromise=null;throw e})}return classifierPromise}
-async function recognize(){const file=$('#photo').files?.[0],status=$('#aiStatus'),button=$('#recognize');if(!file){status.textContent='Primero selecciona una fotografía.';return}button.disabled=true;const url=URL.createObjectURL(file);try{status.textContent='Cargando modelo de reconocimiento (la primera vez puede tardar y consumir varios MB)…';const model=await loadClassifier();status.textContent='Analizando la fotografía…';const results=await model(url,candidates.map(c=>c[2]));const best=results[0],match=candidates.find(c=>c[2]===best.label);if(!match)throw Error('Sin categoría reconocida');$('#category').value=match[0];$('#name').value=match[1];const img=new Image();img.src=url;await img.decode();$('#color').value=guessColor(img);$('#styleInput').value='Casual';status.textContent=`Sugerencia: ${match[1]} · ${$('#color').value} (confianza relativa ${(best.score*100).toFixed(0)}%). Revisa y corrige los campos antes de guardar. El estilo se ha dejado como Casual por defecto.`}catch(e){status.textContent='No se pudo ejecutar el reconocimiento automático. Comprueba tu conexión, abre la app desde HTTPS y vuelve a intentarlo. Puedes completar los campos manualmente. Detalle: '+e.message}finally{URL.revokeObjectURL(url);button.disabled=false}}
-// Eliminación local de fondos con IMG.LY; descarga pesos de modelo desde CDN al primer uso.
-let cutoutBlob=null,cutoutUrl=null,cutoutBusy=false,cutoutPromise=null;
-function resetCutout(){cutoutBlob=null;if(cutoutUrl)URL.revokeObjectURL(cutoutUrl);cutoutUrl=null;$('#maskEditor').classList.add('hidden');$('#preview').hidden=true;$('#preview').removeAttribute('src');$('#restorePhoto').classList.add('hidden');$('#bgStatus').textContent='La primera vez se descargará un modelo. La fotografía se procesa en tu dispositivo.'}
-$('#photo').addEventListener('change',resetCutout);
-$('#restorePhoto').onclick=()=>{resetCutout();$('#bgStatus').textContent='Se usará la fotografía original.'};
-async function cutout(){const file=$('#photo').files?.[0];if(!file){$('#bgStatus').textContent='Selecciona una fotografía primero.';return null}if(cutoutBlob)return cutoutBlob;if(cutoutBusy)return null;cutoutBusy=true;const btn=$('#removeBg');btn.disabled=true;try{
-$('#bgStatus').textContent='Cargando el modelo de eliminación de fondo… Puede tardar y consumir datos la primera vez.';
-if(!cutoutPromise)cutoutPromise=import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm').then(m=>m.removeBackground||m.default).catch(e=>{cutoutPromise=null;throw e});
-const removeBackground=await cutoutPromise;if(typeof removeBackground!=='function')throw Error('No se pudo cargar el módulo');
-$('#bgStatus').textContent='Separando la prenda del fondo…';
-const blob=await removeBackground(file,{progress:(key,current,total)=>{if(total>0)$('#bgStatus').textContent='Descargando recursos: '+Math.round(current/total*100)+'%'}});
-cutoutBlob=blob;cutoutUrl=URL.createObjectURL(blob);$('#preview').src=cutoutUrl;$('#preview').hidden=false;$('#restorePhoto').classList.remove('hidden');$('#bgStatus').textContent='Recorte preliminar listo. Usa el editor para quitar zonas de piel, pantalón o fondo que hayan quedado.';await openMaskEditor(blob);return blob;
-}catch(e){$('#bgStatus').textContent='No se pudo quitar el fondo: '+e.message+'. Puedes guardar la fotografía original.';return null}finally{cutoutBusy=false;btn.disabled=false}}
-$('#removeBg').onclick=cutout;
-
-// Editor de máscara manual: se procesa todo localmente y permite recuperar píxeles originales.
+async function recognize(){const file=selectedPhoto,status=$('#aiStatus'),button=$('#recognize');if(!file){status.textContent='Primero selecciona una fotografía.';return}button.disabled=true;const url=URL.createObjectURL(file);try{status.textContent='Cargando modelo de reconocimiento (la primera vez puede tardar y consumir varios MB)…';const model=await loadClassifier();status.textContent='Analizando la fotografía…';const results=await model(url,candidates.map(c=>c[2]));if(file!==selectedPhoto)return;const best=results[0],match=candidates.find(c=>c[2]===best.label);if(!match)throw Error('Sin categoría reconocida');$('#category').value=match[0];$('#name').value=match[1];const img=await loadImage(cutoutUrl||url);if(file!==selectedPhoto)return;$('#color').value=guessColor(img);$('#styleInput').value='Casual';status.textContent=`Sugerencia: ${match[1]} · ${$('#color').value} (confianza relativa ${(best.score*100).toFixed(0)}%). Revisa y corrige los campos antes de guardar. El estilo se ha dejado como Casual por defecto.`}catch(e){status.textContent='No se pudo ejecutar el reconocimiento automático. Comprueba tu conexión, abre la app desde HTTPS y vuelve a intentarlo. Puedes completar los campos manualmente. Detalle: '+e.message}finally{URL.revokeObjectURL(url);button.disabled=false}}
+let selectedPhoto=null, editing=null, cutoutBlob=null, cutoutUrl=null;
 const mc=$('#maskCanvas'),mx=mc.getContext('2d',{willReadFrequently:true});
-let maskBase=null,maskOriginal=null,maskHistory=[],maskDrawing=false,maskLast=null;
-async function openMaskEditor(blob){
- const file=$('#photo').files?.[0];if(!file)return;
- const cut=await loadImage(URL.createObjectURL(blob));const original=await loadImage(URL.createObjectURL(file));
- const factor=Math.min(1,950/Math.max(cut.width,cut.height));mc.width=Math.round(cut.width*factor);mc.height=Math.round(cut.height*factor);
- const temp=document.createElement('canvas');temp.width=mc.width;temp.height=mc.height;
- temp.getContext('2d').drawImage(original,0,0,mc.width,mc.height);maskOriginal=temp.getContext('2d').getImageData(0,0,mc.width,mc.height);
- mx.clearRect(0,0,mc.width,mc.height);mx.drawImage(cut,0,0,mc.width,mc.height);maskBase=mx.getImageData(0,0,mc.width,mc.height);maskHistory=[];
- $('#maskEditor').classList.remove('hidden');$('#maskStatus').textContent='Desliza el dedo para borrar zonas que no pertenezcan a la prenda.';
+let maskBase=null, maskHistory=[], maskFuture=[], maskPointer=null, maskLast=null;
+
+function resetCutout(){
+ cutoutBlob=null;
+ if(cutoutUrl)URL.revokeObjectURL(cutoutUrl);
+ cutoutUrl=null;
+ maskBase=null;
+ maskPointer=null;
+ maskHistory=[];
+ maskFuture=[];
+ $('#maskEditor').classList.add('hidden');
+ $('#preview').hidden=true;
+ $('#preview').removeAttribute('src');
+ $('#restorePhoto').classList.add('hidden');
+ delete $('#restorePhoto').dataset.useOriginal;
 }
+async function choosePhoto(input){
+ if(!input.files[0])return;
+ selectedPhoto=input.files[0];
+ resetCutout();
+ try {
+  const image=await readPhoto(selectedPhoto);
+  if(selectedPhoto===input.files[0])$('#color').value=guessColor(image);
+ }catch {notify('No se pudo abrir la fotografía.');}
+}
+async function readPhoto(blob){
+ const url=URL.createObjectURL(blob);
+ try{return await loadImage(url);}finally{URL.revokeObjectURL(url);}
+}
+$('#photo').onchange=e=>choosePhoto(e.target);
+$('#cameraPhoto').onchange=e=>choosePhoto(e.target);
+$('#restorePhoto').onclick=()=>{
+ resetCutout();
+ $('#restorePhoto').classList.remove('hidden');
+ $('#restorePhoto').dataset.useOriginal='true';
+ $('#bgStatus').textContent='Se usará la foto original al guardar.';
+};
+$('#removeBg').onclick=async()=>{
+ if(!$('#maskEditor').classList.contains('hidden'))return;
+ const source=selectedPhoto||editing?.original||editing?.image;
+ if(!source){notify('Elige una fotografía primero.');return;}
+ const record=editing, file=selectedPhoto;
+ const useOriginal=$('#restorePhoto').dataset.useOriginal==='true';
+ try{
+  const original=source instanceof Blob?await readPhoto(source):await loadImage(source);
+  let base=original;
+  if(cutoutBlob)base=await readPhoto(cutoutBlob);
+  else if(!file&&record.original&&!useOriginal)base=await loadImage(record.image);
+  if(file!==selectedPhoto||record!==editing)return;
+  const scale=Math.min(1,950/Math.max(original.width,original.height));
+  mc.width=Math.max(1,Math.round(original.width*scale));
+  mc.height=Math.max(1,Math.round(original.height*scale));
+  mx.drawImage(original,0,0,mc.width,mc.height);
+  maskBase=mx.getImageData(0,0,mc.width,mc.height);
+  mx.clearRect(0,0,mc.width,mc.height);
+  mx.drawImage(base,0,0,mc.width,mc.height);
+  $('#maskEditor').classList.remove('hidden');
+  $('#maskStatus').textContent='Usa Borrar para quitar el fondo y Recuperar para corregir.';
+ }catch{notify('No se pudo abrir el editor.');}
+};
 function maskPoint(e){const r=mc.getBoundingClientRect();return {x:(e.clientX-r.left)*mc.width/r.width,y:(e.clientY-r.top)*mc.height/r.height}}
-function maskStroke(a,b){const radius=Number($('#brushSize').value)*mc.width/420/2, mode=$('#maskMode').value;
- const data=mx.getImageData(0,0,mc.width,mc.height),v=data.data,orig=maskOriginal.data;
+function maskStroke(a,b){const radius=Number($('#brushSize').value)*mc.width/mc.getBoundingClientRect().width/2, mode=$('#maskMode').value;
+ const softness=Number($('#edgeSoftness').value)/100;
+ const data=mx.getImageData(0,0,mc.width,mc.height),v=data.data,orig=maskBase.data;
  const distance=Math.hypot(b.x-a.x,b.y-a.y),steps=Math.max(1,Math.ceil(distance/(radius*.45)));
  for(let j=0;j<=steps;j++){const x=a.x+(b.x-a.x)*j/steps,y=a.y+(b.y-a.y)*j/steps;
   for(let py=Math.max(0,Math.floor(y-radius));py<Math.min(mc.height,Math.ceil(y+radius));py++)for(let px=Math.max(0,Math.floor(x-radius));px<Math.min(mc.width,Math.ceil(x+radius));px++){
    const d=Math.hypot(px-x,py-y);if(d>radius)continue;const k=(py*mc.width+px)*4;
-   if(mode==='erase'){v[k+3]=Math.round(v[k+3]*Math.min(1,Math.max(0,(d-radius+2)/2)));}
-   else {const alpha=maskBase.data[k+3];if(alpha===0)continue;for(let c=0;c<3;c++)v[k+c]=orig[k+c];v[k+3]=Math.max(v[k+3],Math.round(alpha*Math.min(1,Math.max(0,(radius-d)/2))));}
+   const coverage=softness?Math.min(1,(radius-d)/(radius*softness)):1;
+   if(mode==='erase')v[k+3]=Math.round(v[k+3]*(1-coverage));
+   else if(orig[k+3]){
+    for(let c=0;c<3;c++)v[k+c]=orig[k+c];
+    v[k+3]=Math.max(v[k+3],Math.round(orig[k+3]*coverage));
+   }
   }
  }
  mx.putImageData(data,0,0);
 }
-mc.addEventListener('pointerdown',e=>{if(!maskBase)return;maskHistory.push(mx.getImageData(0,0,mc.width,mc.height));if(maskHistory.length>12)maskHistory.shift();maskDrawing=true;mc.setPointerCapture(e.pointerId);maskLast=maskPoint(e);maskStroke(maskLast,maskLast)});
-mc.addEventListener('pointermove',e=>{if(!maskDrawing)return;const next=maskPoint(e);maskStroke(maskLast,next);maskLast=next});
-['pointerup','pointercancel'].forEach(ev=>mc.addEventListener(ev,()=>maskDrawing=false));
-$('#maskUndo').onclick=()=>{const last=maskHistory.pop();if(last)mx.putImageData(last,0,0)};
-$('#maskReset').onclick=()=>{if(maskBase){maskHistory=[];mx.putImageData(maskBase,0,0)}};
-$('#maskApply').onclick=async()=>{if(!maskBase)return;const blob=await new Promise(r=>mc.toBlob(r,'image/png'));if(!blob)return;cutoutBlob=blob;if(cutoutUrl)URL.revokeObjectURL(cutoutUrl);cutoutUrl=URL.createObjectURL(blob);$('#preview').src=cutoutUrl;$('#preview').hidden=false;$('#maskStatus').textContent='Recorte aplicado. Ahora puedes guardar la prenda.';$('#bgStatus').textContent='Recorte editado manualmente y listo para guardar.'};
-
+function rememberMask(){
+ maskHistory.push(mx.getImageData(0,0,mc.width,mc.height));
+ if(maskHistory.length>6)maskHistory.shift();
+ maskFuture=[];
+}
+mc.addEventListener('pointerdown',e=>{
+ if(!maskBase||maskPointer!==null)return;
+ rememberMask();
+ maskPointer=e.pointerId;
+ mc.setPointerCapture(e.pointerId);
+ maskLast=maskPoint(e);
+ maskStroke(maskLast,maskLast);
+});
+mc.addEventListener('pointermove',e=>{
+ if(maskPointer!==e.pointerId)return;
+ const point=maskPoint(e);
+ maskStroke(maskLast,point);
+ maskLast=point;
+});
+mc.addEventListener('lostpointercapture',e=>{if(maskPointer===e.pointerId)maskPointer=null;});
+function restoreMask(from,to){
+ if(maskPointer!==null||!from.length)return;
+ to.push(mx.getImageData(0,0,mc.width,mc.height));
+ mx.putImageData(from.pop(),0,0);
+}
+$('#maskUndo').onclick=()=>restoreMask(maskHistory,maskFuture);
+$('#maskRedo').onclick=()=>restoreMask(maskFuture,maskHistory);
+$('#maskReset').onclick=()=>{
+ if(!maskBase||maskPointer!==null)return;
+ rememberMask();
+ mx.putImageData(maskBase,0,0);
+};
+$('#maskApply').onclick=async()=>{
+ if(!maskBase||maskPointer!==null)return;
+ const base=maskBase;
+ const blob=await new Promise(resolve=>mc.toBlob(resolve,'image/png'));
+ if(!blob||base!==maskBase)return;
+ cutoutBlob=blob;
+ if(cutoutUrl)URL.revokeObjectURL(cutoutUrl);
+ cutoutUrl=URL.createObjectURL(blob);
+ $('#preview').src=cutoutUrl;
+ $('#preview').hidden=false;
+ $('#restorePhoto').classList.remove('hidden');
+ $('#color').value=guessColor(mc);
+ $('#maskEditor').classList.add('hidden');
+ maskBase=null;
+ maskHistory=[];
+ maskFuture=[];
+ $('#bgStatus').textContent='Recorte aplicado.';
+};
+function dataUrl(blob){
+ return new Promise((resolve,reject)=>{
+  const reader=new FileReader();
+  reader.onload=()=>resolve(reader.result);
+  reader.onerror=()=>reject(reader.error);
+  reader.readAsDataURL(blob);
+ });
+}
 function compressTransparent(blob){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(blob);img.onload=()=>{const scale=Math.min(1,850/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*scale));c.height=Math.max(1,Math.round(img.height*scale));c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);resolve(c.toDataURL('image/png'))};img.onerror=()=>{URL.revokeObjectURL(url);reject(Error('No se pudo procesar la imagen recortada'))};img.src=url})}
-const DB='armario-local-v1';let db, current=[];function notify(s){$('#status').textContent=s;setTimeout(()=>$('#status').textContent='',4000)}function request(req){return new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}async function all(store){return request(db.transaction(store).objectStore(store).getAll())}async function put(store,data){return request(db.transaction(store,'readwrite').objectStore(store).put(data))}async function remove(store,id){return request(db.transaction(store,'readwrite').objectStore(store).delete(id))}const open=indexedDB.open(DB,1);open.onupgradeneeded=()=>{open.result.createObjectStore('clothes',{keyPath:'id'});open.result.createObjectStore('outfits',{keyPath:'id'})};open.onsuccess=()=>{db=open.result;render()};open.onerror=()=>notify('No se pudo abrir el almacenamiento del navegador.');document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('main section').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.tab));render()});function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}function card(item,canDelete=false){const d=el('div','item'),img=el('img');img.src=item.image;img.alt=item.name;d.append(img);const info=el('div','info');info.append(el('strong','',item.name),el('div','muted',item.color+' · '+item.category));if(canDelete){const b=el('button','danger','Eliminar');b.style.marginTop='7px';b.onclick=async()=>{if(confirm('¿Eliminar esta prenda?')){await remove('clothes',item.id);render()}};info.append(b)}d.append(info);return d}async function render(){if(!db)return;const clothes=await all('clothes');$('#count').textContent=clothes.length+' prendas';const items=$('#items');items.replaceChildren();const selected=$('#filter').value;const list=clothes.filter(c=>!selected||c.category===selected);if(!list.length)items.append(el('p','muted','Aún no hay prendas en esta categoría. Añade una para comenzar.'));list.forEach(c=>items.append(card(c,true)));const picker=$('#tryGarment'),previous=picker.value;picker.replaceChildren(new Option('Selecciona una prenda',''));clothes.forEach(c=>picker.add(new Option(c.name+' · '+c.category,String(c.id))));picker.value=previous;const outfits=await all('outfits');const f=$('#favorites');f.replaceChildren();if(!outfits.length)f.append(el('p','muted','Todavía no tienes outfits guardados.'));outfits.sort((a,b)=>b.id-a.id).forEach(o=>{const p=el('div','panel');p.append(el('strong','',o.occasion+' · '+new Date(o.id).toLocaleDateString('es-MX')));const g=el('div','outfit');g.style.marginTop='12px';o.items.forEach(i=>{const img=el('img');img.src=i.image;img.alt=i.name;img.title=i.name;g.append(img)});p.append(g);const b=el('button','danger','Eliminar favorito');b.style.marginTop='10px';b.onclick=async()=>{await remove('outfits',o.id);render()};p.append(b);f.append(p)})}$('#filter').onchange=render;$('#recognize').onclick=recognize;function compress(file){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const scale=Math.min(1,850/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);resolve(c.toDataURL('image/jpeg',.72))};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Imagen no válida'))};img.src=url})}$('#addform').onsubmit=async e=>{e.preventDefault();try{let image;if($('#removeBgOnSave').checked){const result=await cutout();image=result?await compressTransparent(result):await compress($('#photo').files[0])}else{image=cutoutBlob?await compressTransparent(cutoutBlob):await compress($('#photo').files[0])}await put('clothes',{id:Date.now(),name:$('#name').value.trim(),category:$('#category').value,color:$('#color').value,style:$('#styleInput').value,image});e.target.reset();resetCutout();notify('Prenda guardada.');document.querySelector('[data-tab="closet"]').click()}catch(err){notify('No se pudo guardar. Comprueba el espacio disponible.')}};const neutrals=['Negro','Blanco','Gris','Beige','Café'];function compatible(a,b){if(a===b)return 2;if(neutrals.includes(a)||neutrals.includes(b))return 3;if((a==='Azul'&&b==='Verde')||(a==='Verde'&&b==='Azul'))return 2;return 0}$('#generate').onclick=async()=>{const clothes=await all('clothes'),occasion=$('#occasion').value,groups=['Superior','Inferior','Calzado'];if(groups.some(g=>!clothes.some(c=>c.category===g))){$('#suggestion').textContent='Registra al menos una prenda superior, una inferior y un calzado para crear conjuntos.';return}const pool=g=>clothes.filter(c=>c.category===g);let candidates=[];for(const top of pool('Superior'))for(const bottom of pool('Inferior'))for(const shoes of pool('Calzado')){const arr=[top,bottom,shoes],score=arr.reduce((n,c)=>n+(c.style===occasion?3:c.style==='Versátil'?2:0),0)+compatible(top.color,bottom.color)+compatible(bottom.color,shoes.color)+compatible(top.color,shoes.color);candidates.push({arr,score})}candidates.sort((a,b)=>b.score-a.score);const topScore=candidates[0].score;const best=candidates.filter(c=>c.score>=topScore-2);const pick=best[Math.floor(Math.random()*best.length)];current=pick.arr;const box=$('#suggestion');box.replaceChildren(el('h3','', 'Tu combinación sugerida'));const grid=el('div','grid');current.forEach(i=>grid.append(card(i)));box.append(grid);const save=el('button','','Guardar en favoritos');save.style.marginTop='12px';save.onclick=async()=>{await put('outfits',{id:Date.now(),occasion,items:current.map(c=>({...c}))});notify('Outfit guardado en favoritos.');render()};box.append(save)};
+const DB='armario-local-v1';let db, current=[];function notify(s){$('#status').textContent=s;setTimeout(()=>$('#status').textContent='',4000)}function request(req){return new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}async function all(store){return request(db.transaction(store).objectStore(store).getAll())}async function put(store,data){const tx=db.transaction(store,'readwrite');const committed=transactionDone(tx);tx.objectStore(store).put(data);return committed}async function remove(store,id){return request(db.transaction(store,'readwrite').objectStore(store).delete(id))}const open=indexedDB.open(DB,1);open.onupgradeneeded=()=>{open.result.createObjectStore('clothes',{keyPath:'id'});open.result.createObjectStore('outfits',{keyPath:'id'})};open.onsuccess=()=>{db=open.result;render()};open.onerror=()=>notify('No se pudo abrir el almacenamiento del navegador.');function showTab(tab){
+ document.querySelectorAll('nav button').forEach(button=>{
+  const active=button.dataset.tab===tab;
+  button.classList.toggle('active',active);
+  if(active)button.setAttribute('aria-current','page');
+  else button.removeAttribute('aria-current');
+ });
+ document.querySelectorAll('main section').forEach(section=>section.classList.toggle('hidden',section.id!==tab));
+ render();
+}
+document.querySelectorAll('nav button').forEach(button=>button.onclick=()=>showTab(button.dataset.tab));
+$('#exportBackup').onclick=async()=>{
+ try{await exportWardrobe();}catch{notify('No se pudo exportar la copia.');}
+};
+$('#importBackup').onchange=async e=>{
+ const file=e.target.files[0];
+ if(!file)return;
+ try{await importWardrobe(file);}catch(err){notify('No se pudo importar la copia. '+err.message);}
+ finally{e.target.value='';}
+};
+$('#showFavorites').onclick=()=>showTab('saved');
+function openRegistration(item=null){
+ editing=item;
+ selectedPhoto=null;
+ $('#addform').reset();
+ resetCutout();
+ $('#bgStatus').textContent='Editor manual sin conexión. La segmentación automática de prendas está pendiente.';
+ if(item){
+  for(const field of ['name','category','color'])$('#'+field).value=item[field];
+  $('#styleInput').value=item.style;
+  $('#preview').src=item.image;
+  $('#preview').hidden=false;
+  if(item.original)$('#restorePhoto').classList.remove('hidden');
+ }
+ showTab('add');
+}
+$('#addClothes').onclick=()=>openRegistration();
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}function card(item,canDelete=false){const d=el('div','item'),img=el('img');img.src=item.image;img.alt=item.name;d.append(img);const info=el('div','info');info.append(el('strong','',item.name),el('div','muted',item.color+' · '+item.category));if(canDelete){const b=el('button','danger','Eliminar');b.style.marginTop='7px';b.onclick=async()=>{if(confirm('¿Eliminar esta prenda?')){await remove('clothes',item.id);render()}};const edit=el("button","secondary","Editar");edit.onclick=()=>openRegistration(item);info.append(edit,b)}d.append(info);return d}async function render(){if(!db)return;const clothes=await all('clothes');$('#count').textContent=clothes.length+' prendas';const items=$('#items');items.replaceChildren();const selected=$('#filter').value;const query=$('#searchClothes').value.trim().toLocaleLowerCase('es');const list=clothes.filter(c=>(!selected||c.category===selected)&&[c.name,c.color,c.category,c.style].join(' ').toLocaleLowerCase('es').includes(query));if(!list.length)items.append(el('p','muted','Aún no hay prendas en esta categoría. Añade una para comenzar.'));list.forEach(c=>items.append(card(c,true)));const picker=$('#tryGarment'),previous=picker.value;picker.replaceChildren(new Option('Selecciona una prenda',''));clothes.forEach(c=>picker.add(new Option(c.name+' · '+c.category,String(c.id))));picker.value=previous;const outfits=await all('outfits');const f=$('#favorites');f.replaceChildren();if(!outfits.length)f.append(el('p','muted','Todavía no tienes outfits guardados.'));outfits.sort((a,b)=>b.id-a.id).forEach(o=>{const p=el('div','panel');p.append(el('strong','',o.occasion+' · '+new Date(o.id).toLocaleDateString('es-MX')));const g=el('div','outfit');g.style.marginTop='12px';o.items.forEach(i=>{const img=el('img');img.src=i.image;img.alt=i.name;img.title=i.name;g.append(img)});p.append(g);const b=el('button','danger','Eliminar favorito');b.style.marginTop='10px';b.onclick=async()=>{await remove('outfits',o.id);render()};p.append(b);f.append(p)})}$('#filter').onchange=render;$('#searchClothes').oninput=render;$('#recognize').onclick=recognize;function compress(file){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const scale=Math.min(1,850/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);resolve(c.toDataURL('image/jpeg',.72))};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Imagen no válida'))};img.src=url})}$('#addform').onsubmit=async e=>{
+ e.preventDefault();
+ if(!db||(!selectedPhoto&&!editing)){notify('Elige una fotografía primero.');return;}
+ if(!$('#maskEditor').classList.contains('hidden')){notify('Aplica el recorte o restaura la foto antes de guardar.');return;}
+ const name=$('#name').value.trim();
+ if(!name){notify('Escribe un nombre para la prenda.');return;}
+ const form=e.target, submit=form.querySelector('[type=submit]');
+ const file=selectedPhoto, item=editing, cut=cutoutBlob;
+ const useOriginal=$('#restorePhoto').dataset.useOriginal==='true';
+ const fields={name,category:$('#category').value,color:$('#color').value,style:$('#styleInput').value};
+ submit.disabled=true;
+ try{
+  const original=file?await dataUrl(file):item.original;
+  const image=cut?await compressTransparent(cut):file?await compress(file):useOriginal&&original?original:item.image;
+  await put('clothes',{...item,id:item?.id??Date.now(),...fields,image,original});
+  if(file===selectedPhoto&&item===editing){form.reset();resetCutout();showTab('closet');}
+  notify('Prenda guardada.');
+ }catch{notify('No se pudo guardar. Comprueba la fotografía y el espacio disponible.');}
+ finally{submit.disabled=false;}
+};
+const neutrals=['Negro','Blanco','Gris','Beige','Café'];function compatible(a,b){if(a===b)return 2;if(neutrals.includes(a)||neutrals.includes(b))return 3;if((a==='Azul'&&b==='Verde')||(a==='Verde'&&b==='Azul'))return 2;return 0}$('#generate').onclick=async()=>{const clothes=await all('clothes'),occasion=$('#occasion').value,groups=['Superior','Inferior','Calzado'];if(groups.some(g=>!clothes.some(c=>c.category===g))){$('#suggestion').textContent='Registra al menos una prenda superior, una inferior y un calzado para crear conjuntos.';return}const pool=g=>clothes.filter(c=>c.category===g);let candidates=[];for(const top of pool('Superior'))for(const bottom of pool('Inferior'))for(const shoes of pool('Calzado')){const arr=[top,bottom,shoes],score=arr.reduce((n,c)=>n+(c.style===occasion?3:c.style==='Versátil'?2:0),0)+compatible(top.color,bottom.color)+compatible(bottom.color,shoes.color)+compatible(top.color,shoes.color);candidates.push({arr,score})}candidates.sort((a,b)=>b.score-a.score);const topScore=candidates[0].score;const best=candidates.filter(c=>c.score>=topScore-2);const pick=best[Math.floor(Math.random()*best.length)];current=pick.arr;const box=$('#suggestion');box.replaceChildren(el('h3','', 'Tu combinación sugerida'));const grid=el('div','grid');current.forEach(i=>grid.append(card(i)));box.append(grid);const save=el('button','','Guardar en favoritos');save.style.marginTop='12px';save.onclick=async()=>{await put('outfits',{id:Date.now(),occasion,items:current.map(c=>({...c}))});notify('Outfit guardado en favoritos.');render()};box.append(save)};
 
 // Probador fotográfico local: superposición ajustable, no modelo generativo.
 let personImage=null, garmentImage=null, garmentList=[];
@@ -113,7 +261,6 @@ $('#tryDownload').onclick=()=>{if(!personImage||!garmentImage){$('#tryStatus').t
   try {
    const items=await all('clothes'); const item=items.find(x=>String(x.id)===String(select.value));
    if(!item)throw Error('No se encontró la prenda seleccionada');
-   document.getElementById('clothType').value=item.category==='Inferior'?'lower':'upper';
    const imageData=item.image||item.photo||item.img;
    if(!imageData)throw Error('La prenda no tiene fotografía guardada');
    const blob=await (await fetch(imageData)).blob();
@@ -121,6 +268,7 @@ $('#tryDownload').onclick=()=>{if(!personImage||!garmentImage){$('#tryStatus').t
    if(!endpoint || !/^https:\/\//.test(endpoint))throw Error('Configura primero una URL HTTPS de tu servidor puente');
    localStorage.setItem('armario-server-url',endpoint);
    const form=new FormData();form.append('person',person,'persona.jpg');form.append('garment',blob,'prenda.png');form.append('cloth_type',document.getElementById('clothType').value);
+   if(!confirm('¿Enviar ambas fotos al servidor externo '+new URL(endpoint).origin+'?')){status.textContent='Envío cancelado.';return;}
    const response=await fetch(endpoint+'/api/tryon',{method:'POST',headers:{'X-Armario-Key':document.getElementById('serverKey').value},body:form});
    if(!response.ok){let error;try{error=(await response.json()).detail}catch{}throw Error(error||'Error HTTP '+response.status)}
    const result=await response.blob();if(lastUrl)URL.revokeObjectURL(lastUrl);lastUrl=URL.createObjectURL(result);
@@ -143,12 +291,8 @@ $('#tryDownload').onclick=()=>{if(!personImage||!garmentImage){$('#tryStatus').t
   const select=document.getElementById('tryGarment');const value=select.value;
   if(!value){status.textContent='Selecciona primero una prenda del armario.';return;}
   try {
-   const items=JSON.parse(localStorage.getItem('miArmarioPrendas')||'[]');
-   let item=items.find(x=>String(x.id)===String(value));
-   if(!item){
-    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k)continue;try{const v=JSON.parse(localStorage.getItem(k));if(Array.isArray(v)){item=v.find(x=>String(x.id)===String(value));if(item)break}}catch(e){}}
-   }
-   const src=item?.image||item?.photo||item?.img||item?.dataUrl;
+   const items=await all('clothes');
+   const src=items.find(item=>String(item.id)===value)?.image;
    if(!src){status.textContent='No se encontró la imagen guardada. Puedes usar la fotografía original de la prenda desde tu galería.';return;}
    const res=await fetch(src);const blob=await res.blob();downloadBlob(blob,'mi-prenda.png');status.textContent='Prenda descargada. Abre el demo oficial y sube las dos imágenes.';
   }catch(e){status.textContent='No se pudo exportar esta prenda. Usa su foto original desde tu galería.';}
