@@ -8,7 +8,7 @@ conservados. Las altas nuevas guardan el archivo original junto al PNG editado.
 
 ## Uso
 
-- En **Añadir prenda**, elige Cámara o Galería. Abre **Editar recorte**, borra el
+- En **Añadir prenda**, elige Cámara o Galería. Prueba **Quitar fondo** si la prenda está centrada sobre un fondo liso. En **Editar recorte**, borra el
   fondo y recupera zonas con el pincel. Ajusta el tamaño y suavizado, aplica el
   recorte, revisa los campos y guarda.
 - En **Armario** puedes buscar, filtrar y volver a editar los datos y la imagen.
@@ -16,6 +16,7 @@ conservados. Las altas nuevas guardan el archivo original junto al PNG editado.
   La importación combina los almacenes en una transacción y respeta los
   registros con identificadores que ya existen. El JSON incluye fotografías
   personales. Guárdalo en un lugar privado.
+- En Android, **Descargar imagen** del probador manual abre el selector del sistema para guardar el PNG.
 - El editor manual, el armario, las combinaciones y el probador manual se
   ejecutan localmente. La sugerencia opcional de categoría con CLIP necesita
   conexión para cargar dependencias. El envío opcional al servidor CatVTON
@@ -69,6 +70,7 @@ Para compilar localmente con Node 22, Java 21 y Android SDK 35:
 npm ci
 npm test
 npx cap add android
+cp native-android/*.java android/app/src/main/java/mx/miarmario/personal/
 npx cap sync android
 cd android
 ./gradlew assembleDebug --no-daemon --stacktrace

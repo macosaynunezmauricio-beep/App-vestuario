@@ -29,6 +29,8 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
       - name: Generar proyecto Android
         run: npx cap add android
+      - name: Integrar exportación nativa
+        run: cp native-android/*.java android/app/src/main/java/mx/miarmario/personal/
       - name: Sincronizar
         run: npx cap sync android
       - name: Compilar APK

@@ -95,3 +95,18 @@ test('importa registros de ambos almacenes sin reemplazar los existentes', async
  assert.equal(outfits.length,1);
  db.close();
 });
+
+test('el recorte local separa un fondo uniforme y rechaza una foto sin sujeto', () => {
+ const ctx=vm.createContext({});
+ vm.runInContext(readFileSync('www/local-cutout.js','utf8'),ctx);
+ const width=10,height=10,data=new Uint8ClampedArray(width*height*4).fill(255);
+ assert.equal(ctx.simpleBackdropMask({width,height,data}),null);
+ for(let y=2;y<8;y++)for(let x=3;x<7;x++){
+  const offset=(y*width+x)*4;
+  data[offset]=20;data[offset+1]=40;data[offset+2]=70;
+ }
+ const mask=ctx.simpleBackdropMask({width,height,data});
+ assert.equal(mask[0],1);
+ assert.equal(mask[55],0);
+ assert.equal(mask.reduce((sum,pixel)=>sum+pixel,0),76);
+});
