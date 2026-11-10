@@ -32,6 +32,7 @@ jobs:
       - name: Integrar funciones nativas y modelo local
         run: |
           cp native-android/*.java android/app/src/main/java/mx/miarmario/personal/
+          sed -i 's/minSdkVersion = 23/minSdkVersion = 24/' android/variables.gradle
           mkdir -p android/app/src/main/assets
           curl -fL --retry 3 https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task -o android/app/src/main/assets/pose_landmarker_lite.task
           printf "\ndependencies { implementation 'com.google.mediapipe:tasks-vision:0.10.14' }\n" >> android/app/build.gradle
