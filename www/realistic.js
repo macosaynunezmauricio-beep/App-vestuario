@@ -7,7 +7,7 @@ function realisticParameters(category, options={}) {
  if(!['flat-lay','model'].includes(photoType))throw Error('Tipo de fotografía no válido.');
  const seed=options.seed??Math.floor(Math.random()*2147483647);
  if(!Number.isInteger(seed)||seed<0||seed>2147483647)throw Error('Semilla no válida.');
- return [category,photoType,50,1.5,seed,options.loose===true];
+ return [category,photoType,50,1.5,seed,options.loose!==false];
 }
 
 function garmentBounds(data,width,height) {

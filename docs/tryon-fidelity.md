@@ -4,7 +4,7 @@ La generación anterior enviaba `item.original || item.image`, ignorando el reco
 
 Esta revisión usa la imagen editada por defecto, elimina únicamente márgenes transparentes y compone explícitamente el canal alfa sobre blanco, conservando colores y proporciones dentro de un lienzo 768 × 1152. La lectura de píxeles se limita a 1536 px por lado. No se vuelve a segmentar por color ni se modifica la foto guardada. Se puede elegir la foto original si el recorte está incompleto, y especificar si la prenda está sola o puesta en otra persona.
 
-Se usan 50 pasos, guidance 1.5 y ajuste con segmentación por defecto, conforme al contrato público del demo. El modo holgado activa segmentation_free. Cada solicitud usa una semilla nueva. Esto no garantiza fidelidad: se mantiene el estado experimental y el aviso de transmisión a terceros.
+Se usan 50 pasos y guidance 1.5, conforme al contrato público del demo. Se conserva segmentation_free por defecto después de observar pérdida de mangas en una prueba con segmentación. El usuario puede desactivar «Conservar volumen» para probar el ajuste restringido. Cada solicitud usa una semilla nueva. Esto no garantiza fidelidad: se mantiene el estado experimental y el aviso de transmisión a terceros.
 
 Referencias verificadas:
 - https://huggingface.co/spaces/fashn-ai/fashn-vton-1.5/blob/main/app.py
@@ -17,6 +17,10 @@ Referencias verificadas:
 - Comprobación adicional con Canvas nativo: PNG 768 × 1152, fondo blanco opaco, preservación de píxeles blancos y rojos. No equivale a prueba en Android.
 - Chromium no pudo arrancar en este entorno (socket no permitido). No se afirma validación visual de WebView.
 - No se enviaron fotos personales a terceros durante estas pruebas.
+
+## Prueba real del servicio
+
+Se enviaron exclusivamente los ejemplos públicos person3.png y garment3.jpeg del demo oficial. Con 50 pasos, semilla 42 y segmentación, el servicio devolvió una imagen pero omitió las mangas. Con la preparación nueva de entrada y segmentation_free=true, devolvió una imagen que sí conserva mangas y color general; no conserva perfectamente textura ni forma. No es una comparación aislada de un solo parámetro: también cambió la preparación de entrada. Un tercer intento, con entrada preparada y segmentación, devolvió `event: error / data: null`. Por ello no se impone la segmentación como supuesto arreglo universal. La mejora en la camisa naranja del usuario aún no está comprobada.
 
 ## Prueba pendiente en teléfono
 
