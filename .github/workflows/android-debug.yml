@@ -29,8 +29,12 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
       - name: Generar proyecto Android
         run: npx cap add android
-      - name: Integrar exportación nativa
-        run: cp native-android/*.java android/app/src/main/java/mx/miarmario/personal/
+      - name: Integrar funciones nativas y modelo local
+        run: |
+          cp native-android/*.java android/app/src/main/java/mx/miarmario/personal/
+          mkdir -p android/app/src/main/assets
+          curl -fL --retry 3 https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task -o android/app/src/main/assets/pose_landmarker_lite.task
+          printf "\ndependencies { implementation 'com.google.mediapipe:tasks-vision:0.10.14' }\n" >> android/app/build.gradle
       - name: Sincronizar
         run: npx cap sync android
       - name: Compilar APK
