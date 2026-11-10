@@ -13,11 +13,21 @@ function validateBackup(backup) {
  const validItem = item => item && validId(item.id) && validImage(item.image) &&
   ['name','category','color','style'].every(key => typeof item[key] === 'string') &&
   (item.original === undefined || validImage(item.original));
+ const validComposition=outfit=>{
+  if(outfit.composition===undefined)return true;
+  const entry=outfit.composition;
+  return entry && validImage(entry.photo) && Array.isArray(entry.transforms) &&
+   entry.transforms.length===outfit.items.length && entry.transforms.length<=12 &&
+   entry.transforms.every(t=>t && typeof t.visible==='boolean' &&
+    ['x','y','size','rotation'].every(key=>Number.isFinite(t[key])) &&
+    t.x>=0 && t.x<=100 && t.y>=0 && t.y<=100 && t.size>=10 && t.size<=140 &&
+    Math.abs(t.rotation)<=180);
+ };
  if (backup?.format !== 'mi-armario' || backup.version !== 1 ||
      !Array.isArray(backup.clothes) || !backup.clothes.every(validItem) ||
      !Array.isArray(backup.outfits) || !backup.outfits.every(outfit =>
       outfit && validId(outfit.id) && typeof outfit.occasion === 'string' &&
-      Array.isArray(outfit.items) && outfit.items.every(validItem))) {
+      Array.isArray(outfit.items) && outfit.items.every(validItem) && validComposition(outfit))) {
   throw Error('El archivo no es una copia compatible de Mi Armario.');
  }
  for (const store of backupStores) {
