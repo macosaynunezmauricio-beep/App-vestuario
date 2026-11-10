@@ -27,7 +27,12 @@ function simpleBackdropMask({width, height, data}) {
  const u=red-green,v=blue-green;
  const referenceLength=Math.hypot(u,v);
  const matches=pixel=>{
-  if(!colorful)return distance(reference,pixel)<53;
+  if(!colorful){
+   const offset=pixel*4;
+   const light=(data[offset]+data[offset+1]+data[offset+2])/3;
+   // Protect bright foreground that differs only slightly from a white backdrop.
+   return distance(reference,pixel)<(light>165?28:53);
+  }
   const offset=pixel*4;
   const x=data[offset]-data[offset+1],y=data[offset+2]-data[offset+1];
   const length=Math.hypot(x,y);
