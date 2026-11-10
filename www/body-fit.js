@@ -1,9 +1,20 @@
-function bodyPlacement(points, category, aspect, width, height) {
+function bodyPlacement(points, category, aspect, width, height, shoeSide=0) {
+ const reliable=p=>p&&p.visibility>=.55&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.x<=1&&p.y>=0&&p.y<=1;
+ if(category==='Calzado'){
+  const feet=[[27,29,31],[28,30,32]].map(([ankle,heel,toe])=>[points[ankle],points[heel],points[toe]]);
+  if(feet.some(foot=>!reliable(foot[0])))return null;
+  feet.sort((a,b)=>a[0].x-b[0].x);
+  const [ankle,heel,toe]=feet[shoeSide];
+  if(!reliable(heel)||!reliable(toe))return null;
+  const length=Math.hypot((toe.x-ankle.x)*width,(toe.y-ankle.y)*height);
+  if(length<height*.018)return null;
+  return {x:(ankle.x+toe.x)*50,y:(ankle.y+toe.y)*50,
+   size:Math.max(5,Math.min(22,length*aspect*115/width)),rotation:0,stretch:1};
+ }
  const groups={
-  Superior:[[11,12],[23,24],1.35,.06],
-  Exterior:[[11,12],[23,24],1.5,.08],
-  Inferior:[[23,24],[27,28],1.26,0],
-  Calzado:[[27,28],[31,32],1.45,.02]
+  Superior:[[11,12],[23,24],1.75,.18],
+  Exterior:[[11,12],[23,24],1.85,.2],
+  Inferior:[[23,24],[27,28],1.72,.13],
  };
  const group=groups[category];
  if(!group||!(aspect>0))return null;
@@ -16,10 +27,11 @@ function bodyPlacement(points, category, aspect, width, height) {
  if(bottom.y<=top.y)return null;
  const spread=Math.hypot(a.x-b.x,a.y-b.y);
  const length=Math.hypot(bottom.x-top.x,bottom.y-top.y);
- const pixels=category==='Calzado'?Math.max(spread*margin,length*aspect):Math.min(spread*margin,length*aspect*(1+extra));
+ const pixels=spread*margin;
+ const stretch=Math.max(.65,Math.min(1.6,length*(1+extra)*aspect/pixels));
  if(pixels<width*.05)return null;
  const [left,right]=a.x<=b.x?[a,b]:[b,a];
  const rotation=category==='Calzado'?0:Math.atan2(right.y-left.y,right.x-left.x)*180/Math.PI;
  return {x:(top.x+bottom.x)*50/width,y:(top.y+bottom.y)*50/height,
-  size:Math.max(5,Math.min(140,pixels*100/width)),rotation};
+  size:Math.max(5,Math.min(140,pixels*100/width)),rotation,stretch};
 }

@@ -246,7 +246,7 @@ function drawTry(){
  if(personImage)tctx.drawImage(personImage,0,0,w,h);
  for(const layer of layers){
   if(!layer.visible)continue;
-  const width=layer.size*w/100,height=width*layer.bitmap.height/layer.bitmap.width;
+  const width=layer.size*w/100,height=width*layer.bitmap.height/layer.bitmap.width*(layer.stretch??1);
   tctx.save();
   tctx.translate(layer.x*w/100,layer.y*h/100);
   tctx.rotate(layer.rotation*Math.PI/180);
@@ -288,7 +288,7 @@ function changeLayer(update){
 }
 $('#toggleLayer').onclick=()=>changeLayer(layer=>layer.visible=!layer.visible);
 $('#removeLayer').onclick=()=>changeLayer(()=>{layers.splice(active,1);active=Math.min(active,layers.length-1);});
-$('#tryReset').onclick=()=>changeLayer(layer=>{const {visible,...position}=initialLayer(layer.item.category);Object.assign(layer,position);});
+$('#tryReset').onclick=()=>changeLayer(layer=>{const {visible,...position}=initialLayer(layer.item.category);Object.assign(layer,position,{stretch:1});});
 function reorder(offset){
  const target=active+offset;
  if(target<0||target>=layers.length)return;
@@ -393,8 +393,15 @@ $('#autoFit').onclick=async()=>{
    if(source!==personSource){fitMessage('La foto cambió. Intenta de nuevo.');return;}
    analyzedPhoto=source;analysis=result.points;
   }
-  const fits=layers.map(layer=>layer.visible&&bodyPlacement(analysis,layer.item.category,
-    layer.bitmap.width/layer.bitmap.height,tc.width,tc.height));
+  const shoes=layers.filter(layer=>layer.visible&&layer.item.category==='Calzado').sort((a,b)=>a.x-b.x);
+  const fits=layers.map(layer=>{
+   if(!layer.visible)return null;
+   const shoeIndex=shoes.indexOf(layer);
+   if(shoeIndex>1)return null;
+   const side=shoes.length===1?Number(layer.x>50):Math.max(0,shoeIndex);
+   return bodyPlacement(analysis,layer.item.category,layer.bitmap.width/layer.bitmap.height,
+    tc.width,tc.height,side);
+  });
   const count=fits.filter(Boolean).length;
   if(!count){fitMessage('No se ven suficientes puntos corporales para estas prendas. Prueba una foto frontal con el cuerpo completo o usa el ajuste manual.');return;}
   remember();
@@ -428,7 +435,7 @@ tc.addEventListener('pointerdown',e=>{
   changeLayer(layer=>Object.assign(layer,{
    x:(fitStart.x+point.x)*50/tc.width,y:(fitStart.y+point.y)*50/tc.height,
    size:Math.max(10,Math.min(140,Math.min(width,height*layer.bitmap.width/layer.bitmap.height)*100/tc.width)),
-   rotation:0
+   rotation:0,stretch:1
   }));
   endFit();
   fitMessage('Prenda ajustada. Puedes moverla o girarla con los dedos.');

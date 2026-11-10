@@ -9,5 +9,5 @@ function layerHit(layer, point, width, height) {
  const angle=layer.rotation*Math.PI/180;
  const size=layer.size*width/100;
  return Math.abs(dx*Math.cos(angle)+dy*Math.sin(angle))<=size/2 &&
-  Math.abs(dy*Math.cos(angle)-dx*Math.sin(angle))<=size*layer.bitmap.height/layer.bitmap.width/2;
+  Math.abs(dy*Math.cos(angle)-dx*Math.sin(angle))<=size*layer.bitmap.height/layer.bitmap.width*(layer.stretch??1)/2;
 }
