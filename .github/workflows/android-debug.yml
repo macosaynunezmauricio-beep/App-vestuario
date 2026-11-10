@@ -2,7 +2,7 @@ name: Compilar APK de prueba
 on:
   workflow_dispatch:
   push:
-    branches: [main, review/mi-armario-5.4, review/mi-armario-integral]
+    branches: [main, review/mi-armario-5.4, review/mi-armario-integral, review/tryon-fidelity]
   pull_request:
     branches: [main]
 permissions:
