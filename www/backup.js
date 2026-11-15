@@ -18,10 +18,15 @@ function validateBackup(backup) {
   const entry=outfit.composition;
   return entry && validImage(entry.photo) && Array.isArray(entry.transforms) &&
    entry.transforms.length===outfit.items.length && entry.transforms.length<=12 &&
+   (entry.occlusion===undefined||validOcclusion(entry.occlusion)) &&
    entry.transforms.every(t=>t && typeof t.visible==='boolean' &&
     ['x','y','size','rotation'].every(key=>Number.isFinite(t[key])) &&
     t.x>=0 && t.x<=100 && t.y>=0 && t.y<=100 && t.size>=5 && t.size<=140 &&
-    Math.abs(t.rotation)<=180);
+    Math.abs(t.rotation)<=180 &&
+    (t.stretch===undefined||(Number.isFinite(t.stretch)&&t.stretch>=.1&&t.stretch<=5)) &&
+    (t.opacity===undefined||(Number.isFinite(t.opacity)&&t.opacity>=.2&&t.opacity<=1)) &&
+    (t.brightness===undefined||(Number.isFinite(t.brightness)&&t.brightness>=.7&&t.brightness<=1.3)) &&
+    (t.mesh===undefined||validGarmentMesh(t.mesh)));
  };
  if (backup?.format !== 'mi-armario' || backup.version !== 1 ||
      !Array.isArray(backup.clothes) || !backup.clothes.every(validItem) ||
