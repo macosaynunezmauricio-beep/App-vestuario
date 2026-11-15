@@ -5,7 +5,7 @@ function validGarmentMesh(points){
  if(!Array.isArray(points)||points.length!==9||points.some(p=>!p||!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<-.35||p.x>1.35||p.y<-.35||p.y>1.35))return false;
  for(let y=0;y<2;y++)for(let x=0;x<2;x++){
   const a=y*3+x,b=a+1,c=a+3,d=c+1;
-  if(meshArea(points[a],points[b],points[d])<.015||meshArea(points[a],points[d],points[c])<.015)return false;
+  if(meshArea(points[a],points[b],points[d])<.015||meshArea(points[a],points[d],points[c])<.015||meshArea(points[a],points[b],points[c])<.015||meshArea(points[b],points[d],points[c])<.015)return false;
  }
  return true;
 }
@@ -35,22 +35,33 @@ function meshTriangle(ctx,image,src,dst){
   return [x,y,p[key]-x*a.x-y*a.y];
  };
  const [xx,xy,xt]=solve('x'),[yx,yy,yt]=solve('y');
- ctx.save();ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.lineTo(r.x,r.y);ctx.closePath();ctx.clip();
+ // Subpixel overlap prevents antialiased clip edges from opening seams.
+ const center={x:(p.x+q.x+r.x)/3,y:(p.y+q.y+r.y)/3};
+ const clip=[p,q,r].map(v=>{const dx=v.x-center.x,dy=v.y-center.y,d=Math.hypot(dx,dy);return {x:v.x+dx/d*1.2,y:v.y+dy/d*1.2};});
+ ctx.save();ctx.beginPath();ctx.moveTo(clip[0].x,clip[0].y);ctx.lineTo(clip[1].x,clip[1].y);ctx.lineTo(clip[2].x,clip[2].y);ctx.closePath();ctx.clip();
  ctx.transform(xx,yx,xy,yy,xt,yt);ctx.drawImage(image,0,0);ctx.restore();
 }
+let garmentSurface=null;
 function renderGarment(ctx,layer,width,height){
  const f=garmentFrame(layer,width,height);
- ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.angle);
- ctx.globalAlpha=layer.opacity??1;ctx.filter='brightness('+(layer.brightness??1)+')';
- if(!layer.mesh){ctx.drawImage(layer.bitmap,-f.w/2,-f.h/2,f.w,f.h);ctx.restore();return;}
+ if(!layer.mesh){
+  ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.angle);ctx.globalAlpha=layer.opacity??1;ctx.filter='brightness('+(layer.brightness??1)+')';
+  ctx.drawImage(layer.bitmap,-f.w/2,-f.h/2,f.w,f.h);ctx.restore();return;
+ }
+ // One reusable surface bounds memory and applies opacity only once after triangles overlap.
+ if(!garmentSurface)garmentSurface=document.createElement('canvas');
+ if(garmentSurface.width!==width||garmentSurface.height!==height){garmentSurface.width=width;garmentSurface.height=height;}
+ const targetCtx=garmentSurface.getContext('2d');targetCtx.clearRect(0,0,width,height);
+ targetCtx.save();targetCtx.translate(f.x,f.y);targetCtx.rotate(f.angle);
  const count=8;
  const dest=(u,v)=>{const p=meshSample(layer.mesh,u,v);return {x:(p.x-.5)*f.w,y:(p.y-.5)*f.h};};
  for(let y=0;y<count;y++)for(let x=0;x<count;x++){
   const uv=[[x/count,y/count],[(x+1)/count,y/count],[(x+1)/count,(y+1)/count],[x/count,(y+1)/count]];
   const source=uv.map(([u,v])=>({x:u*layer.bitmap.width,y:v*layer.bitmap.height})),target=uv.map(([u,v])=>dest(u,v));
-  for(const ids of [[0,1,2],[0,2,3]])meshTriangle(ctx,layer.bitmap,ids.map(i=>source[i]),ids.map(i=>target[i]));
+  for(const ids of [[0,1,2],[0,2,3]])meshTriangle(targetCtx,layer.bitmap,ids.map(i=>source[i]),ids.map(i=>target[i]));
  }
- ctx.restore();
+ targetCtx.restore();
+ ctx.save();ctx.globalAlpha=layer.opacity??1;ctx.filter='brightness('+(layer.brightness??1)+')';ctx.drawImage(garmentSurface,0,0);ctx.restore();
 }
 function meshHit(layer,point,width,height){
  const p=canvasToMesh(point,layer,width,height),points=layer.mesh||flatGarmentMesh();
