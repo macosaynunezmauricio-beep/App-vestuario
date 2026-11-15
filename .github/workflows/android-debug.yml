@@ -2,7 +2,7 @@ name: Compilar APK de prueba
 on:
   workflow_dispatch:
   push:
-    branches: [main, review/mi-armario-5.4, review/mi-armario-integral, review/tryon-fidelity]
+    branches: [main, review/mi-armario-5.4, review/mi-armario-integral, review/tryon-fidelity, review/local-garment-shaping]
   pull_request:
     branches: [main]
 permissions:
@@ -24,6 +24,16 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Comprobar JavaScript
         run: npm test
+      - name: Preparar navegador de prueba
+        run: npx playwright install --with-deps chromium
+      - name: Probar editor sin conexión
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pruebas-editor-local
+          path: test-results/
+          if-no-files-found: ignore
       - name: Instalar Android SDK 35
         run: |
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'

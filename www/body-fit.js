@@ -27,8 +27,11 @@ function bodyPlacement(points, category, aspect, width, height, shoeSide=0) {
  if(bottom.y<=top.y)return null;
  const spread=Math.hypot(a.x-b.x,a.y-b.y);
  const length=Math.hypot(bottom.x-top.x,bottom.y-top.y);
- const pixels=spread*margin;
- const stretch=Math.max(.65,Math.min(1.6,length*(1+extra)*aspect/pixels));
+ // Fit waist-to-ankles independently of garment aspect; avoid truncating long trousers.
+ const legSpread=Math.abs(c.x-d.x);
+ const pixels=category==='Inferior'?Math.max(spread*margin,legSpread+spread*.65):spread*margin;
+ const targetHeight=length*(1+extra);
+ const stretch=Math.max(.35,Math.min(3.5,targetHeight*aspect/pixels));
  if(pixels<width*.05)return null;
  const [left,right]=a.x<=b.x?[a,b]:[b,a];
  const rotation=category==='Calzado'?0:Math.atan2(right.y-left.y,right.x-left.x)*180/Math.PI;
