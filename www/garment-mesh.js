@@ -42,11 +42,22 @@ function meshTriangle(ctx,image,src,dst){
  ctx.transform(xx,yx,xy,yy,xt,yt);ctx.drawImage(image,0,0);ctx.restore();
 }
 let garmentSurface=null;
+const reflectedGarments=new WeakMap();
+function garmentTexture(layer){
+ if(!layer.flipX)return layer.bitmap;
+ if(!reflectedGarments.has(layer.bitmap)){
+  const c=document.createElement('canvas');c.width=layer.bitmap.width;c.height=layer.bitmap.height;
+  const x=c.getContext('2d');x.translate(c.width,0);x.scale(-1,1);x.drawImage(layer.bitmap,0,0);
+  reflectedGarments.set(layer.bitmap,c);
+ }
+ return reflectedGarments.get(layer.bitmap);
+}
 function renderGarment(ctx,layer,width,height){
+ const texture=garmentTexture(layer);
  const f=garmentFrame(layer,width,height);
  if(!layer.mesh){
   ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.angle);ctx.globalAlpha=layer.opacity??1;ctx.filter='brightness('+(layer.brightness??1)+')';
-  ctx.drawImage(layer.bitmap,-f.w/2,-f.h/2,f.w,f.h);ctx.restore();return;
+  ctx.drawImage(texture,-f.w/2,-f.h/2,f.w,f.h);ctx.restore();return;
  }
  // One reusable surface bounds memory and applies opacity only once after triangles overlap.
  if(!garmentSurface)garmentSurface=document.createElement('canvas');
@@ -58,7 +69,7 @@ function renderGarment(ctx,layer,width,height){
  for(let y=0;y<count;y++)for(let x=0;x<count;x++){
   const uv=[[x/count,y/count],[(x+1)/count,y/count],[(x+1)/count,(y+1)/count],[x/count,(y+1)/count]];
   const source=uv.map(([u,v])=>({x:u*layer.bitmap.width,y:v*layer.bitmap.height})),target=uv.map(([u,v])=>dest(u,v));
-  for(const ids of [[0,1,2],[0,2,3]])meshTriangle(targetCtx,layer.bitmap,ids.map(i=>source[i]),ids.map(i=>target[i]));
+  for(const ids of [[0,1,2],[0,2,3]])meshTriangle(targetCtx,texture,ids.map(i=>source[i]),ids.map(i=>target[i]));
  }
  targetCtx.restore();
  ctx.save();ctx.globalAlpha=layer.opacity??1;ctx.filter='brightness('+(layer.brightness??1)+')';ctx.drawImage(garmentSurface,0,0);ctx.restore();
@@ -73,4 +84,39 @@ function meshHit(layer,point,width,height){
   }
  }
  return false;
+}
+
+const touchMasks=new WeakMap();
+function touchMask(bitmap){
+ if(!touchMasks.has(bitmap)){
+  const scale=Math.min(1,120/Math.max(bitmap.width,bitmap.height)),c=document.createElement('canvas');
+  c.width=Math.max(1,Math.round(bitmap.width*scale));c.height=Math.max(1,Math.round(bitmap.height*scale));
+  const ctx=c.getContext('2d');ctx.drawImage(bitmap,0,0,c.width,c.height);
+  const pixels=ctx.getImageData(0,0,c.width,c.height).data,alpha=new Uint8Array(c.width*c.height);
+  for(let i=0;i<alpha.length;i++)alpha[i]=pixels[i*4+3];
+  touchMasks.set(bitmap,{alpha,width:c.width,height:c.height});c.width=c.height=1;
+ }
+ return touchMasks.get(bitmap);
+}
+function garmentHitTest(layer,point,width,height){
+ if(!meshHit(layer,point,width,height))return false;
+ const p=canvasToMesh(point,layer,width,height);
+ let uv=p;
+ if(layer.mesh){
+  // Invert the same piecewise affine triangles used to render the texture.
+  uv=null;const n=8;
+  for(let y=0;y<n&&!uv;y++)for(let x=0;x<n&&!uv;x++){
+   const cell=[[x,y],[x+1,y],[x+1,y+1],[x,y+1]].map(([i,j])=>({x:i/n,y:j/n}));
+   const dest=cell.map(q=>meshSample(layer.mesh,q.x,q.y));
+   for(const [a,b,c] of [[0,1,2],[0,2,3]]){
+    const area=meshArea(dest[a],dest[b],dest[c]),s=meshArea(dest[a],p,dest[c])/area,t=meshArea(dest[a],dest[b],p)/area;
+    if(s<-.0001||t<-.0001||s+t>1.0001)continue;
+    uv={x:cell[a].x*(1-s-t)+cell[b].x*s+cell[c].x*t,y:cell[a].y*(1-s-t)+cell[b].y*s+cell[c].y*t};break;
+   }
+  }
+  if(!uv)return false;
+ }
+ const m=touchMask(layer.bitmap);
+ const x=Math.max(0,Math.min(m.width-1,Math.floor((layer.flipX?1-uv.x:uv.x)*m.width))),y=Math.max(0,Math.min(m.height-1,Math.floor(uv.y*m.height)));
+ return m.alpha[y*m.width+x]>=40;
 }

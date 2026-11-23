@@ -2,7 +2,7 @@ name: Compilar APK de prueba
 on:
   workflow_dispatch:
   push:
-    branches: [main, review/mi-armario-5.4, review/mi-armario-integral, review/tryon-fidelity, review/local-garment-shaping]
+    branches: [main, review/mi-armario-5.4, review/mi-armario-integral, review/tryon-fidelity, review/local-garment-shaping, review/estudio-movil]
   pull_request:
     branches: [main]
 permissions:
@@ -45,6 +45,7 @@ jobs:
           sed -i 's/minSdkVersion = 23/minSdkVersion = 24/' android/variables.gradle
           mkdir -p android/app/src/main/assets
           curl -fL --retry 3 https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task -o android/app/src/main/assets/pose_landmarker_lite.task
+          echo '59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a  android/app/src/main/assets/pose_landmarker_lite.task' | sha256sum -c -
           printf "\ndependencies { implementation 'com.google.mediapipe:tasks-vision:0.10.14' }\n" >> android/app/build.gradle
       - name: Sincronizar
         run: npx cap sync android
@@ -56,3 +57,33 @@ jobs:
           name: mi-armario-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+  android-smoke:
+    needs: android
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: mi-armario-debug-apk
+          path: build-test
+      - name: Preparar prueba con fotografía pública de MediaPipe
+        run: |
+          curl -fL --retry 3 https://storage.googleapis.com/mediapipe-assets/pose.jpg -o /tmp/pose.jpg
+          echo 'c8a830ed683c0276d713dd5aeda28f415f10cd6291972084a40d0d8b934ed62b  /tmp/pose.jpg' | sha256sum -c -
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Instalar y probar el APK sin conexión
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: x86
+          target: google_apis
+          disable-animations: true
+          script: |
+            adb install -r build-test/app-debug.apk
+            node checks/android.cjs /tmp/pose.jpg

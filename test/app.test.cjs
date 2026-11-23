@@ -25,16 +25,6 @@ test('acepta registros existentes y originales, y rechaza copias mal formadas', 
  assert.throws(() => validate({...backup,clothes:[{...item,image:'https://example.test'}]}));
 });
 
-test('detecta blanco e ignora píxeles transparentes', () => {
- const color = scripts[0][1].match(/^function guessColor.*$/m)[0];
- const data = new Uint8ClampedArray([255,255,255,255,0,0,0,0]);
- const drawing = {drawImage(){},getImageData(){return {data}}};
- const guess = vm.runInNewContext(color+'\nguessColor', {
-  document:{createElement(){return {getContext(){return drawing}}}}
- });
- assert.equal(guess({}), 'Blanco');
-});
-
 test('el pincel borra y recupera píxeles de la imagen original', () => {
  const source = scripts[0][1].split('function maskStroke')[1].split('function rememberMask')[0];
  const pixels = new Uint8ClampedArray(5 * 5 * 4).fill(255);

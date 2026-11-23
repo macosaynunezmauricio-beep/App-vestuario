@@ -1,5 +1,5 @@
 // Detects background connected to the frame on a mostly uniform backdrop.
-function simpleBackdropMask({width, height, data}) {
+function simpleBackdropMask({width, height, data}, careful=false) {
  const size=width*height;
  if(width<3||height<3)return null;
  const edges=[];
@@ -31,12 +31,12 @@ function simpleBackdropMask({width, height, data}) {
    const offset=pixel*4;
    const light=(data[offset]+data[offset+1]+data[offset+2])/3;
    // Protect bright foreground that differs only slightly from a white backdrop.
-   return distance(reference,pixel)<(light>165?28:53);
+   return distance(reference,pixel)<(light>165?(careful?8:28):(careful?28:53));
   }
   const offset=pixel*4;
   const x=data[offset]-data[offset+1],y=data[offset+2]-data[offset+1];
   const length=Math.hypot(x,y);
-  return length>12&&x*u+y*v>length*referenceLength*.83;
+  return length>12&&x*u+y*v>length*referenceLength*(careful?.94:.83)&&(!careful||distance(reference,pixel)<54);
  };
  const background=new Uint8Array(size), queue=new Uint32Array(size);
  let tail=0;
@@ -58,6 +58,7 @@ function simpleBackdropMask({width, height, data}) {
  // does not survive alongside the garment.
  const seen=new Uint8Array(size);
  let largestStart=-1,largestSize=0;
+ const candidates=[];
  function component(start,keep){
   let end=0;
   function add(pixel){
@@ -79,11 +80,15 @@ function simpleBackdropMask({width, height, data}) {
  for(let pixel=0;pixel<size;pixel++){
   if(background[pixel]||seen[pixel])continue;
   const area=component(pixel,false);
+  if(careful&&area>=size*.008)candidates.push({pixel,area});
   if(area>largestSize){largestSize=area;largestStart=pixel;}
  }
  if(largestSize<size*.04)return null;
  seen.fill(0);
  component(largestStart,true);
+ if(careful)for(const candidate of candidates){
+  if(candidate.pixel!==largestStart&&candidate.area>=largestSize*.18)component(candidate.pixel,true);
+ }
  for(let pixel=0;pixel<size;pixel++)background[pixel]=seen[pixel]===2?0:1;
  return background;
 }
