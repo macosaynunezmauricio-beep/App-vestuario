@@ -12,42 +12,20 @@ El probador permite añadir prendas por miniatura, ajustarlas con la postura loc
 
 [Instalación, controles, pruebas y limitaciones del estudio móvil](docs/estudio-movil.md)
 
-## Auditoría y diseño de segmentación
+## Recortar una prenda en Android
 
-El editor anterior solo abría después de que un modelo genérico descargado desde
-un CDN devolviera un resultado. Su pincel Recuperar estaba limitado por esa
-máscara y podía dejar fuera partes de la prenda. La selección por color tampoco
-separaba piel, fondo y prendas similares. Esta beta reemplaza esos atajos de
-recorte con un editor que abre directamente sobre la foto local.
+1. Abre la foto en el editor de recorte. Para ropa sobre una mesa o una percha, elige **Prenda suelta**. Si alguien la lleva puesta, elige **Parte superior puesta** o **Parte inferior puesta**.
+2. Pulsa **Seleccionar por toque** y toca dentro de la tela. Para añadir la otra pernera o el segundo zapato, usa **Sumar zona** y repite el toque. Usa **Restar zona** o los pinceles para afinar la máscara.
+3. Pulsa **Aplicar recorte** para usar el PNG transparente. El original queda disponible al editar la prenda.
 
-La segmentación especializada por toque queda pendiente. Para un prototipo,
-probar **SegFormer-B2 Clothes** con ONNX Runtime para Android y un puente
-Capacitor. El modelo está entrenado en ATR y tiene clases de ropa y partes
-corporales. La ficha de pesos indica licencia **other** y el código de
-entrenamiento tiene licencia MIT. Confirmar los permisos de redistribución de
-pesos por separado antes de empaquetarlos. El orden de magnitud del checkpoint
-FP32 es 109 MB y solo los pesos equivalentes en INT8 serían aproximadamente
-27 MB antes de metadatos y capas que queden en flotante. La RAM pico y latencia
-dependen de las activaciones y del proveedor de ejecución. Quedan por medir.
-[Ficha de pesos](https://huggingface.co/mattmdjaga/segformer_b2_clothes/tree/main)
-y [código de entrenamiento](https://github.com/mattmdjaga/segformer_b2_clothes).
+MagicTouch selecciona el objeto indicado. En fotos de ropa puesta, Selfie Multiclass identifica las regiones de ropa, pelo y piel. La postura y el borde visible de la tela ayudan a separar camisa y pantalón a la altura de la cintura. Si el borde es ambiguo, el editor permite ajustar la selección con el pincel. Las dos redes se instalan con el APK. [Modelos y licencia](www/assets/MEDIAPIPE-NOTICE.txt)
 
-**FASHN Human Parser** es una alternativa SegFormer-B4 con 18 clases que separan
-rostro, brazos y torso de tops, pantalones y otras prendas. Su licencia declarada
-es NVIDIA SegFormer y su entrada es 384 × 576. Su encoder más grande lo deja como
-referencia de calidad para comparar. [Ficha del modelo](https://huggingface.co/fashn-ai/fashn-human-parser).
+## Manos y rostro en el probador
 
-El puente nativo debería leer la imagen local, conservar orientación y mapa de
-coordenadas, identificar la clase bajo el toque y seleccionar el componente
-conectado de esa clase que contiene el punto. Devuelve una máscara alfa al
-editor. Dos prendas contiguas de la misma clase pueden requerir un modelo de
-instancias o corrección manual. Evaluar cobertura de prenda y fuga de piel con
-fotos de camisas puestas, mangas, prendas superpuestas y fondos variados.
-Comparar ONNX FP32 e INT8 en el teléfono antes de decidir el formato final,
-midiendo latencia en frío y caliente, RAM máxima y tamaño del APK.
+Al abrir una foto con postura reconocible, el probador recupera sus píxeles de rostro, cabello y piel cerca de las manos y los antebrazos. Así, una mano cruzada puede pasar por delante de la camisa. En **Manos y brazos delante de la ropa** puedes desactivar la protección o corregirla con el pincel. El conjunto y su respaldo guardan la máscara, y la exportación la aplica a la imagen final. La detección puede omitir manos tapadas o poco visibles. La caída de la tela sigue dependiendo del ajuste geométrico.
 
 ## Compilación y verificación
 
-El flujo de GitHub Actions instala dependencias desde el lockfile, ejecuta Node y Chromium, prepara Capacitor con Java 21 y Android SDK 35, integra los plugins nativos y comprueba el hash del modelo de pose. Publica el APK de depuración y lo instala en un emulador para probar el guardado de imágenes. El resultado exacto y los artefactos están en la ejecución correspondiente al commit.
+El flujo de GitHub Actions instala dependencias desde el lockfile, ejecuta Node y Chromium, prepara Capacitor con Java 21 y Android SDK 35, integra los plugins nativos y comprueba los hashes de los tres modelos de visión. Publica el APK de depuración y lo instala en un emulador para probar el recorte, el primer plano y el guardado de imágenes con la red desactivada. El resultado exacto y los artefactos están en la ejecución correspondiente al commit.
 
 [Configuración reproducible de la compilación](.github/workflows/android-debug.yml)

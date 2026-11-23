@@ -34,7 +34,9 @@ async function main(){
   await evaluate(`(async()=>{
    for(const [id,name,category,color] of [[1,'Camisa naranja','Superior','#ef7615'],[2,'Pantalón gris','Inferior','#808080'],[3,'Tenis negros','Calzado','#282828']]){
     const c=document.createElement('canvas');c.width=140;c.height=category==='Inferior'?300:160;
-    const ctx=c.getContext('2d');ctx.fillStyle=color;ctx.fillRect(4,4,c.width-8,c.height-8);
+    const ctx=c.getContext('2d');ctx.fillStyle=color;if(category==='Superior'){ctx.fillRect(31,10,78,142);ctx.fillRect(4,18,132,45);}
+    else if(category==='Inferior'){ctx.fillRect(18,4,104,91);ctx.fillRect(10,90,53,203);ctx.fillRect(76,90,53,203);}
+    else{ctx.fillRect(6,18,51,130);ctx.fillRect(81,18,51,130);}
     await put('clothes',{id,name,category,color,style:'Casual',image:c.toDataURL()});
    }await render();showTab('tryon');
   })()`);
@@ -48,11 +50,14 @@ async function main(){
    })()`);
    const pose=await evaluate("({points:analysis?.length||0,status:document.querySelector('#fitStatus').textContent})");
    assert.equal(pose.points,33,'native MediaPipe: '+pose.status);
+   assert.ok(await evaluate('validVisionMask(automaticFront)'),'native semantic foreground: '+await evaluate("$('#frontStatus').textContent"));
+   assert.ok(await evaluate("poseOutlines.get(analysis)?.pixels.includes(String.fromCharCode(1))"),'native silhouette');
    if(size===360){
     for(const id of [1,2,3])await evaluate(`(async()=>{const item=catalog.clothes.find(i=>i.id===${id});await addGarment(item);})()`);
    }
    assert.equal(await evaluate('layers.length'),3);
-   assert.ok(await evaluate("layers.find(l=>l.item.category==='Superior').mesh?.length===9"));
+   assert.ok(await evaluate("layers.find(l=>l.item.category==='Superior').mesh?.length===25"));
+   assert.equal(await evaluate("layers.find(l=>l.item.category==='Calzado').shoeHalf"),0);
    const expected=await evaluate(`(async()=>{
     const png=await compositePng(),img=await readPhoto(png),c=document.createElement('canvas');c.width=img.width;c.height=img.height;
     const ctx=c.getContext('2d');ctx.drawImage(img,0,0);const p=ctx.getImageData(0,0,c.width,c.height).data;let orange=0,blue=0;
@@ -83,7 +88,31 @@ async function main(){
   await until(()=>/ChooserActivity|ResolverActivity|IntentResolver/.test(adb('shell','dumpsys','activity','activities').toString()),'Android share sheet');
   adb('shell','input','keyevent','4');await until(()=>evaluate('!exportBusy'),'return to editor');
   assert.equal(await evaluate('layers.length'),3);console.log('PASS native share sheet, editor kept all layers.');
+  const reopened=await evaluate(`(async()=>{
+   const expected=automaticFront.data;await saveLook();const id=editingLook;
+   $('#detectFront').click();const removed=automaticFront===null;
+   await openLook(id);return {removed,restored:automaticFront?.data===expected,count:layers.length};
+  })()`);
+  assert.deepEqual(reopened,{removed:true,restored:true,count:3});
+  console.log('PASS saved look restores native foreground and all three garments.');
+  const nativeCut=await evaluate(`(async()=>{
+   const pose=analysis,torso=[11,12,23,24].map(i=>pose[i]);
+   const px=torso.reduce((sum,p)=>sum+p.x,0)/4,py=torso.reduce((sum,p)=>sum+p.y,0)/4;
+   openRegistration();
+   const bytes=await (await fetch(personSource)).blob(),dt=new DataTransfer();
+   dt.items.add(new File([bytes],'prenda-puesta.jpg',{type:'image/jpeg'}));
+   const input=$('#photo');input.files=dt.files;await choosePhoto(input);await $('#removeBg').onclick();
+   $('#wornPart').value='whole';$('#tapSelect').click();await selectFromTap({x:px*mc.width,y:py*mc.height});
+   const pixels=mx.getImageData(0,0,mc.width,mc.height).data;
+   const kept=pixels.filter((v,i)=>i%4===3&&v>=160).length/(mc.width*mc.height);
+   const status=$('#maskStatus').textContent;
+   $('#maskUndo').click();const restored=mx.getImageData(0,0,1,1).data[3];$('#maskRedo').click();
+   await $('#maskApply').onclick();return {kept,restored,png:cutoutBlob&&cutoutBlob.type,status};
+  })()`);
+  assert.ok(nativeCut.kept>.001&&nativeCut.kept<.70,JSON.stringify(nativeCut));assert.equal(nativeCut.restored,255);
+  assert.equal(nativeCut.png,'image/png');console.log('PASS interactive garment, clothing classes, undo / redo and transparent PNG',nativeCut.kept);
  }catch(error){
+  try{console.error(adb('logcat','-d','-s','WardrobeVision:E').toString().slice(-6000));}catch{}
   try{console.error('Android app state:',await evaluate("({url:location.href,webview:navigator.userAgent,fit:document.querySelector('#fitStatus')?.textContent,export:document.querySelector('#tryStatus')?.textContent})"));}catch{}
   throw error;
  }finally{socket.close();adb('forward','--remove','tcp:9223');}

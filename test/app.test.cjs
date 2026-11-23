@@ -35,7 +35,16 @@ test('el pincel borra y recupera píxeles de la imagen original', () => {
  const ctx = {
   Math, maskBase:{data:original},
   mc:{width:5,height:5,getBoundingClientRect:()=>({width:5})},
-  mx:{getImageData:()=>({data:pixels}),putImageData(){}},
+  mx:{
+   getImageData(x,y,width,height){
+    const data=new Uint8ClampedArray(width*height*4);
+    for(let j=0;j<height;j++)data.set(pixels.slice(((y+j)*5+x)*4,((y+j)*5+x+width)*4),j*width*4);
+    return {width,height,data};
+   },
+   putImageData({width,height,data},x,y){
+    for(let j=0;j<height;j++)pixels.set(data.slice(j*width*4,(j+1)*width*4),((j+y)*5+x)*4);
+   }
+  },
   $:id=>({value:{'#brushSize':4,'#maskMode':mode,'#edgeSoftness':0}[id]})
  };
  const stroke = vm.runInNewContext('function maskStroke'+source+'\nmaskStroke',ctx);

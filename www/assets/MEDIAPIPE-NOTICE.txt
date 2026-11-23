@@ -1,0 +1,5 @@
+Mi Armario incluye MagicTouch y Selfie Multiclass Segmentation de Google (2023).
+Licencia Apache 2.0. Se incluye el texto en MEDIAPIPE-LICENSE.txt.
+Las versiones originales de ambos modelos se empaquetan sin modificar.
+https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MagicTouch.pdf
+https://storage.googleapis.com/mediapipe-assets/Model%20Card%20Multiclass%20Segmentation.pdf

@@ -42,3 +42,43 @@ test('quitar sombras requiere contraste y detiene la máscara en la costura',()=
  data.fill(255);mask.fill(0);mask[0]=1;
  assert.equal(c.clearBackdropShadow({width:w,height:h,data},mask),0);
 });
+
+test('cada manga responde a su codo sin mover el bolsillo ni la otra manga',()=>{
+ const c=app(),base=c.flatGarmentMesh(),w=100,mask={width:w,height:w,alpha:new Uint8Array(w*w)};
+ for(let y=0;y<w;y++)for(let x=0;x<w;x++)if((x>24&&x<76)||(y>8&&y<42))mask.alpha[y*w+x]=255;
+ const points=[];
+ for(const [i,x,y] of [[11,.26,.12],[12,.74,.12],[13,.22,.56],[14,.84,.53],[23,.34,.9],[24,.67,.9]])points[i]={x,y,visibility:1};
+ const layer={size:100,x:50,y:50,rotation:0,bitmap:{width:w,height:w}};
+ const fit=()=>c.articulatedMesh(base,points,'Superior',layer,w,w,mask);
+ const first=fit();points[13].x=.02;const second=fit();
+ assert.equal(first.length,25);assert.ok(c.validGarmentMesh(second));
+ assert.ok(c.meshSample(second,.10,.40).x<c.meshSample(first,.10,.40).x-.045);
+ for(const x of [.5,.75,1])assert.deepEqual(c.meshSample(second,x,.40),c.meshSample(first,x,.40));
+ points[13].visibility=points[14].visibility=.1;assert.equal(fit(),base);
+});
+test('cada pernera sigue su rodilla, mantiene la cintura y admite respaldos de ambas mallas',()=>{
+ const c=app(),base=c.flatGarmentMesh(),mask={width:100,height:100,alpha:new Uint8Array(10000)};
+ for(let y=0;y<100;y++)for(let x=4;x<96;x++)if(y<30||Math.abs(x-50)>4)mask.alpha[y*100+x]=255;
+ const points=[];for(const [i,x,y] of [[23,.30,.05],[24,.69,.05],[25,.29,.53],[26,.77,.54],[27,.22,.96],[28,.8,.94]])points[i]={x,y,visibility:1};
+ const layer={size:100,x:50,y:50,rotation:0,bitmap:{width:100,height:100}};
+ const fit=()=>c.articulatedMesh(base,points,'Inferior',layer,100,100,mask);
+ const first=fit();points[25].x=.12;const second=fit();
+ assert.equal(second.length,25);assert.ok(c.validGarmentMesh(second));assert.ok(second[11].x<first[11].x-.12);
+ assert.deepEqual(second.slice(0,5),first.slice(0,5));assert.deepEqual(second[13],first[13]);
+ const q=c.meshToCanvas(second[11],layer,100,100);assert.ok(c.meshHit({...layer,mesh:second},q,100,100));
+ mask.alpha.fill(255);assert.equal(fit(),base);
+});
+test('la silueta ensancha el borde visible del pantalón sin arrastrar la costura central',()=>{
+ const c=app(),points=[],flat=c.flatGarmentMesh(),mesh=Array.from({length:25},(_,i)=>c.meshSample(flat,i%5/4,Math.floor(i/5)/4));
+ for(const [i,x,y] of [[23,.34,.08],[24,.66,.08],[25,.34,.51],[26,.66,.51],[27,.34,.92],[28,.66,.92]])points[i]={x,y,visibility:1};
+ const mask={width:100,height:100,alpha:new Uint8Array(10000)},body=Buffer.alloc(10000);
+ for(let y=0;y<100;y++)for(let x=0;x<100;x++){
+  if(x>=17&&x<83)mask.alpha[y*100+x]=255;
+  if(x>=8&&x<91)body[y*100+x]=1;
+ }
+ const l={size:100,x:50,y:50,rotation:0,bitmap:{width:100,height:100}};
+ const outline={w:100,h:100,pixels:body.toString('latin1')};
+ const adjusted=c.fitSilhouette(mesh,outline,points,'Inferior',l,100,100,mask);
+ assert.ok(c.validGarmentMesh(adjusted));assert.ok(adjusted[10].x<mesh[10].x);assert.ok(adjusted[14].x>mesh[14].x);
+ assert.deepEqual(adjusted[12],mesh[12]);assert.equal(c.fitSilhouette(mesh,null,points,'Inferior',l,100,100,mask),mesh);
+});

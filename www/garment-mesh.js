@@ -1,18 +1,20 @@
-// Normalized control grid: three columns and three rows, stored per garment.
+// Normalized control grid: legacy 3×3 and articulated 5×5 meshes, stored per garment.
 function flatGarmentMesh(){return Array.from({length:9},(_,i)=>({x:(i%3)/2,y:Math.floor(i/3)/2}));}
 function meshArea(a,b,c){return (b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);}
 function validGarmentMesh(points){
- if(!Array.isArray(points)||points.length!==9||points.some(p=>!p||!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<-.35||p.x>1.35||p.y<-.35||p.y>1.35))return false;
- for(let y=0;y<2;y++)for(let x=0;x<2;x++){
-  const a=y*3+x,b=a+1,c=a+3,d=c+1;
-  if(meshArea(points[a],points[b],points[d])<.015||meshArea(points[a],points[d],points[c])<.015||meshArea(points[a],points[b],points[c])<.015||meshArea(points[b],points[d],points[c])<.015)return false;
+ if(!Array.isArray(points)||![9,25].includes(points.length)||points.some(p=>!p||!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<-.35||p.x>1.35||p.y<-.35||p.y>1.35))return false;
+ const side=Math.sqrt(points.length),minimum=.06/(side-1)**2;
+ for(let y=0;y<side-1;y++)for(let x=0;x<side-1;x++){
+  const a=y*side+x,b=a+1,c=a+side,d=c+1;
+  if(meshArea(points[a],points[b],points[d])<minimum||meshArea(points[a],points[d],points[c])<minimum||meshArea(points[a],points[b],points[c])<minimum||meshArea(points[b],points[d],points[c])<minimum)return false;
  }
  return true;
 }
 function meshSample(points,u,v){
- const x=Math.min(1,Math.floor(u*2)),y=Math.min(1,Math.floor(v*2)),a=y*3+x;
- const s=u*2-x,t=v*2-y;
- const blend=key=>(1-s)*(1-t)*points[a][key]+s*(1-t)*points[a+1][key]+(1-s)*t*points[a+3][key]+s*t*points[a+4][key];
+ const side=Math.sqrt(points.length),steps=side-1;
+ const x=Math.min(steps-1,Math.floor(u*steps)),y=Math.min(steps-1,Math.floor(v*steps)),a=y*side+x;
+ const s=u*steps-x,t=v*steps-y;
+ const blend=key=>(1-s)*(1-t)*points[a][key]+s*(1-t)*points[a+1][key]+(1-s)*t*points[a+side][key]+s*t*points[a+side+1][key];
  return {x:blend('x'),y:blend('y')};
 }
 function garmentFrame(layer,width,height){
@@ -50,8 +52,8 @@ function necklinePath(center,width,depth){
 }
 function garmentTexture(layer){
  const bitmap=layer.bitmap;
- if(!layer.flipX&&!layer.neckDepth)return bitmap;
- const key=[!!layer.flipX,layer.neckCenter,layer.neckWidth,layer.neckDepth].join(',');
+ if(!layer.flipX&&!layer.neckDepth&&!layer.sceneShade)return bitmap;
+ const key=[!!layer.flipX,layer.neckCenter,layer.neckWidth,layer.neckDepth,layer.sceneShade].join(',');
  const cached=preparedGarments.get(bitmap);
  if(cached?.key===key)return cached.image;
  const image=document.createElement('canvas');image.width=bitmap.width;image.height=bitmap.height;
@@ -64,6 +66,14 @@ function garmentTexture(layer){
    if(i)ctx.lineTo(x*image.width,y*image.height);else ctx.moveTo(x*image.width,y*image.height);
   });
   ctx.closePath();ctx.fill();
+ }
+ if(layer.sceneShade){
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.globalCompositeOperation='source-atop';
+  const gradient=ctx.createLinearGradient(0,0,image.width,0),shade='rgba(0,0,0,'+Math.abs(layer.sceneShade)+')';
+  gradient.addColorStop(0,layer.sceneShade>0?shade:'transparent');
+  gradient.addColorStop(1,layer.sceneShade<0?shade:'transparent');
+  ctx.fillStyle=gradient;ctx.fillRect(0,0,image.width,image.height);
  }
  preparedGarments.set(bitmap,{key,image});return image;
 }
@@ -91,9 +101,10 @@ function renderGarment(ctx,layer,width,height){
 }
 function meshHit(layer,point,width,height){
  const p=canvasToMesh(point,layer,width,height),points=layer.mesh||flatGarmentMesh();
- for(let y=0;y<2;y++)for(let x=0;x<2;x++){
-  const a=y*3+x;
-  for(const ids of [[a,a+1,a+4],[a,a+4,a+3]]){
+ const side=Math.sqrt(points.length);
+ for(let y=0;y<side-1;y++)for(let x=0;x<side-1;x++){
+  const a=y*side+x;
+  for(const ids of [[a,a+1,a+side+1],[a,a+side+1,a+side]]){
    const [a,b,c]=ids.map(i=>points[i]);
    if(meshArea(a,b,p)>=0&&meshArea(b,c,p)>=0&&meshArea(c,a,p)>=0)return true;
   }
@@ -134,4 +145,33 @@ function garmentHitTest(layer,point,width,height){
  const m=touchMask(garmentTexture(layer));
  const x=Math.max(0,Math.min(m.width-1,Math.floor(uv.x*m.width))),y=Math.max(0,Math.min(m.height-1,Math.floor(uv.y*m.height)));
  return m.alpha[y*m.width+x]>=40;
+}
+
+// Keep both photographed shoes, including their distinct logos and orientation.
+const photographedPairs=new WeakMap();
+function shoePieces(bitmap){
+ if(photographedPairs.has(bitmap))return photographedPairs.get(bitmap);
+ const m=touchMask(bitmap),counts=new Uint16Array(m.width);
+ for(let i=0;i<m.alpha.length;i++)if(m.alpha[i]>=100)counts[i%m.width]++;
+ const empty=x=>counts[x]<=Math.floor(m.height*.015);
+ let split=null;
+ for(let x=Math.ceil(m.width*.26);x<m.width*.74;x++){
+  if(!empty(x))continue;
+  const start=x;while(x+1<m.width*.75&&empty(x+1))x++;
+  if(x-start+1>=Math.max(2,m.width*.025)){split=(start+x+1)/2;break;}
+ }
+ let pair=null;
+ if(split!==null){
+  const ranges=[[0,Math.floor(split)],[Math.ceil(split),m.width]];
+  const areas=ranges.map(([start,end])=>counts.slice(start,end).reduce((a,b)=>a+b,0));
+  if(Math.min(...areas)>m.width*m.height*.07&&Math.min(...areas)/Math.max(...areas)>.48){
+   const cut=Math.round(bitmap.width*split/m.width);
+   pair=[[0,cut],[cut,bitmap.width]].map(([start,end])=>{
+    const c=document.createElement('canvas');c.width=end-start;c.height=bitmap.height;
+    c.getContext('2d').drawImage(bitmap,-start,0);return trimGarment(c);
+   });
+   for(const shoe of pair)photographedPairs.set(shoe,pair);
+  }
+ }
+ photographedPairs.set(bitmap,pair);return pair;
 }
