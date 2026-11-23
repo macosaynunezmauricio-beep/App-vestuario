@@ -601,7 +601,8 @@ $('#pairShoe').onclick=()=>{
  const copy={...layer,foot:1-foot,flipX:!layer.flipX,mesh:layer.mesh?.map(p=>({...p})),x:Math.max(0,Math.min(100,layer.x+(foot?-1:1)*layer.size*.85))};
  const pair=shoePieces(layer.bitmap);
  if(pair){
-  layer.shoeHalf??=0;layer.bitmap=pair[layer.shoeHalf];
+  if(layer.shoeHalf===undefined)layer.shoeHalf=0;
+  layer.bitmap=pair[layer.shoeHalf];
   copy.shoeHalf=1-layer.shoeHalf;copy.bitmap=pair[copy.shoeHalf];copy.flipX=false;
  }
  active=insertGarment(layers,copy);
