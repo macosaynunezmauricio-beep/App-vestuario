@@ -22,11 +22,13 @@ test('el borde de la camisa sigue el cambio de tela; una superficie uniforme que
 });
 test('las manos y la cara pasan delante conservando las mangas y el fondo',()=>{
  const w=64,h=96,p=[],labels=new Uint8Array(w*h).fill(4);
- for(const [i,x,y] of [[0,32,16],[11,18,35],[12,46,35],[13,15,50],[15,26,56],[19,29,55]])p[i]={x:x/w,y:y/h,visibility:1};
+ for(const [i,x,y] of [[0,32,16],[11,18,35],[12,46,35],[13,15,50],[15,26,56],[19,29,55],[14,49,43],[16,57,70]])p[i]={x:x/w,y:y/h,visibility:1};
  for(let y=12;y<=20;y++)for(let x=28;x<=36;x++)labels[y*w+x]=3;
  for(let y=53;y<=58;y++)for(let x=20;x<=33;x++)labels[y*w+x]=2;
- labels[70*w+52]=2;labels[14*w+3]=0;
+ labels[29*w+32]=2;labels[55*w+53]=2;labels[69*w+57]=2;
+ labels[73*w+48]=2;labels[14*w+3]=0;
  const front=c.personForeground(c.packMask(w,h,labels),p),alpha=c.unpackMask(front);
  assert.ok(alpha[16*w+32]>240&&alpha[55*w+27]>240);
- assert.equal(alpha[50*w+15],0);assert.equal(alpha[70*w+52],0);assert.equal(alpha[14*w+3],0);
+ assert.equal(alpha[50*w+15],0);assert.equal(alpha[73*w+48],0);
+ assert.equal(alpha[29*w+32],255);assert.equal(alpha[55*w+53],0);assert.ok(alpha[69*w+57]>200);assert.equal(alpha[14*w+3],0);
 });

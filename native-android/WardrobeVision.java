@@ -1,5 +1,6 @@
 package mx.miarmario.personal;
 
+import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
@@ -9,92 +10,98 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
-import com.google.mediapipe.framework.image.BitmapImageBuilder;
-import com.google.mediapipe.framework.image.ByteBufferExtractor;
-import com.google.mediapipe.framework.image.MPImage;
-import com.google.mediapipe.tasks.components.containers.NormalizedKeypoint;
-import com.google.mediapipe.tasks.core.BaseOptions;
-import com.google.mediapipe.tasks.vision.imagesegmenter.ImageSegmenter;
-import com.google.mediapipe.tasks.vision.interactivesegmenter.InteractiveSegmenter;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import org.tensorflow.lite.Interpreter;
 
 @CapacitorPlugin(name = "WardrobeVision")
 public class WardrobeVision extends Plugin {
-    private BaseOptions model(String asset) {
-        return BaseOptions.builder().setModelAssetPath(asset).build();
+    private MappedByteBuffer mapModel(String name) throws IOException {
+        try (AssetFileDescriptor asset = getContext().getAssets().openFd(name);
+             FileInputStream input = asset.createInputStream()) {
+            return input.getChannel().map(FileChannel.MapMode.READ_ONLY, asset.getStartOffset(), asset.getDeclaredLength());
+        }
     }
 
-    private JSObject packConfidence(MPImage mask) {
-        int width = mask.getWidth(), height = mask.getHeight();
-        float scale = Math.min(1f, 384f / Math.max(width, height));
-        int w = Math.max(1, Math.round(width * scale)), h = Math.max(1, Math.round(height * scale));
-        var bytes = ByteBufferExtractor.extract(mask).order(ByteOrder.nativeOrder());
-        var floats = bytes.asFloatBuffer();
-        byte[] samples = new byte[w * h];
-        for (int y = 0; y < h; y++) {
-            int row = (int)((y + .5f) * height / h) * width;
-            for (int x = 0; x < w; x++) {
-                int index = row + (int)((x + .5f) * width / w);
-                samples[y * w + x] = (byte)Math.round(255 * floats.get(index));
+    private ByteBuffer inputTensor(Bitmap photo, int size, boolean interactive, double tapX, double tapY) {
+        Bitmap square = Bitmap.createScaledBitmap(photo, size, size, true);
+        int[] rgb = new int[size * size];
+        try {
+            square.getPixels(rgb, 0, size, 0, 0, size, size);
+        } finally {
+            if (square != photo) square.recycle();
+        }
+        int channels = interactive ? 4 : 3;
+        ByteBuffer buffer = ByteBuffer.allocateDirect(size * size * channels * 4).order(ByteOrder.nativeOrder());
+        FloatBuffer floats = buffer.asFloatBuffer();
+        // Model metadata specifies [0,1] RGB + tap for MagicTouch, [-1,1] RGB for Selfie.
+        float mean = interactive ? 0f : 127.5f, std = interactive ? 255f : 127.5f;
+        double radius = Math.max(1, Math.round(Math.max(photo.getWidth(), photo.getHeight()) / (double)size));
+        int tapCol = Math.min(size - 1, (int)(tapX * size)), tapRow = Math.min(size - 1, (int)(tapY * size));
+        for (int i = 0; i < rgb.length; i++) {
+            int pixel = rgb[i];
+            floats.put((((pixel >> 16) & 255) - mean) / std);
+            floats.put((((pixel >> 8) & 255) - mean) / std);
+            floats.put(((pixel & 255) - mean) / std);
+            if (interactive) {
+                int x = i % size, y = i / size;
+                double dx = ((x + .5) / size - tapX) * photo.getWidth();
+                double dy = ((y + .5) / size - tapY) * photo.getHeight();
+                boolean seed = (x == tapCol && y == tapRow) || dx * dx + dy * dy <= radius * radius;
+                floats.put(seed ? 1f : 0f);
             }
         }
-        return samplesResult(w, h, samples);
+        return buffer;
     }
 
-    private JSObject samplesResult(int w, int h, byte[] samples) {
+    private JSObject mask(FloatBuffer pixels, int gridW, int gridH, int channels, int w, int h) {
+        byte[] data = new byte[w * h];
+        for (int y = 0; y < h; y++) {
+            float v = Math.max(0, (y + .5f) * gridH / h - .5f);
+            int y0 = (int)v, y1 = Math.min(gridH - 1, y0 + 1);
+            float fy = v - y0;
+            for (int x = 0; x < w; x++) {
+                float u = Math.max(0, (x + .5f) * gridW / w - .5f);
+                int x0 = (int)u, x1 = Math.min(gridW - 1, x0 + 1);
+                float fx = u - x0, maximum = Float.NEGATIVE_INFINITY;
+                int label = 0;
+                for (int c = 0; c < channels; c++) {
+                    float a = pixels.get((y0 * gridW + x0) * channels + c);
+                    float b = pixels.get((y0 * gridW + x1) * channels + c);
+                    float d = pixels.get((y1 * gridW + x0) * channels + c);
+                    float e = pixels.get((y1 * gridW + x1) * channels + c);
+                    float top = a + fx * (b - a), bottom = d + fx * (e - d);
+                    float score = top + fy * (bottom - top);
+                    if (score > maximum) { maximum = score; label = c; }
+                }
+                data[y*w+x] = channels == 1 ? (byte)Math.round(255f * Math.max(0f, Math.min(1f, maximum))) : (byte)label;
+            }
+        }
         JSObject result = new JSObject();
         result.put("w", w);
         result.put("h", h);
-        result.put("data", Base64.encodeToString(samples, Base64.NO_WRAP));
+        result.put("data", Base64.encodeToString(data, Base64.NO_WRAP));
         return result;
     }
 
-    private JSObject select(MPImage image, float x, float y) {
-        var options = InteractiveSegmenter.InteractiveSegmenterOptions.builder()
-            .setBaseOptions(model("magic_touch.tflite")).setOutputConfidenceMasks(true).build();
-        try (var segmenter = InteractiveSegmenter.createFromOptions(getContext(), options)) {
-            var roi = InteractiveSegmenter.RegionOfInterest.create(NormalizedKeypoint.create(x, y));
-            var masks = segmenter.segment(image, roi).confidenceMasks().get();
-            try {
-                return packConfidence(masks.get(masks.size() - 1));
-            } finally {
-                masks.forEach(MPImage::close);
-            }
-        }
-    }
-
-    private JSObject classify(MPImage image) {
-        var options = ImageSegmenter.ImageSegmenterOptions.builder()
-            .setBaseOptions(model("selfie_multiclass.tflite"))
-            .setOutputConfidenceMasks(true).setOutputCategoryMask(false).build();
-        float scale = Math.min(1f, 384f / Math.max(image.getWidth(), image.getHeight()));
-        int width = Math.max(1, Math.round(image.getWidth() * scale));
-        int height = Math.max(1, Math.round(image.getHeight() * scale));
-        var output = ImageSegmenter.SegmentationOptions.builder()
-            .setOutputWidth(width).setOutputHeight(height).build();
-        try (var segmenter = ImageSegmenter.createFromOptions(getContext(), options)) {
-            var masks = segmenter.segment(image, output).confidenceMasks().get();
-            try {
-                if (masks.size() != 6) throw new IllegalStateException("Se esperaban seis clases.");
-                FloatBuffer[] channels = new FloatBuffer[masks.size()];
-                for (int i = 0; i < channels.length; i++) {
-                    channels[i] = ByteBufferExtractor.extract(masks.get(i)).order(ByteOrder.nativeOrder()).asFloatBuffer();
-                }
-                byte[] classes = new byte[width * height];
-                for (int i = 0; i < classes.length; i++) {
-                    int best = 0;
-                    float max = channels[0].get(i);
-                    for (int c = 1; c < channels.length; c++) {
-                        float value = channels[c].get(i);
-                        if (value > max) { best = c; max = value; }
-                    }
-                    classes[i] = (byte)best;
-                }
-                return samplesResult(width, height, classes);
-            } finally {
-                masks.forEach(MPImage::close);
-            }
+    private JSObject infer(Bitmap photo, boolean interactive, double x, double y) throws IOException {
+        String asset = interactive ? "magic_touch.tflite" : "selfie_multiclass.tflite";
+        int size = interactive ? 512 : 256;
+        float scale = Math.min(1f, 384f / Math.max(photo.getWidth(), photo.getHeight()));
+        int w = Math.max(1, Math.round(photo.getWidth() * scale)), h = Math.max(1, Math.round(photo.getHeight() * scale));
+        // CPU-only inference and mask conversion also work on devices without compute shaders.
+        try (Interpreter interpreter = new Interpreter(mapModel(asset), new Interpreter.Options().setNumThreads(2))) {
+            int[] shape = interpreter.getOutputTensor(0).shape();
+            if (shape.length != 4 || shape[3] != (interactive ? 1 : 6)) throw new IllegalStateException("Modelo incompatible.");
+            ByteBuffer output = ByteBuffer.allocateDirect(interpreter.getOutputTensor(0).numBytes()).order(ByteOrder.nativeOrder());
+            interpreter.run(inputTensor(photo, size, interactive, x, y), output);
+            output.rewind();
+            return mask(output.asFloatBuffer(), shape[2], shape[1], shape[3], w, h);
         }
     }
 
@@ -114,21 +121,16 @@ public class WardrobeVision extends Plugin {
             opts.inJustDecodeBounds = false;
             bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, opts);
             if (bitmap == null) throw new IllegalArgumentException();
-            MPImage image = new BitmapImageBuilder(bitmap).build();
-            try {
-                JSObject result = new JSObject();
-                if ("select".equals(mode)) {
-                    double x = call.getDouble("x", -1.0), y = call.getDouble("y", -1.0);
-                    if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) throw new IllegalArgumentException();
-                    result.put("subject", select(image, (float)x, (float)y));
-                    if (call.getBoolean("worn", false)) result.put("classes", classify(image));
-                } else if ("person".equals(mode)) {
-                    result.put("classes", classify(image));
-                } else throw new IllegalArgumentException();
-                call.resolve(result);
-            } finally {
-                image.close();
-            }
+            JSObject result = new JSObject();
+            if ("select".equals(mode)) {
+                double x = call.getDouble("x", -1.0), y = call.getDouble("y", -1.0);
+                if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) throw new IllegalArgumentException();
+                result.put("subject", infer(bitmap, true, x, y));
+                if (call.getBoolean("worn", false)) result.put("classes", infer(bitmap, false, 0, 0));
+            } else if ("person".equals(mode)) {
+                result.put("classes", infer(bitmap, false, 0, 0));
+            } else throw new IllegalArgumentException();
+            call.resolve(result);
         } catch (Exception e) {
             Log.e("WardrobeVision", "Fallo en modo " + mode, e);
             call.reject("No se pudo analizar esta foto en el dispositivo.", e);

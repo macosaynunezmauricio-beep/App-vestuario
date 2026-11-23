@@ -51,17 +51,28 @@ function personForeground(classes,points){
  if(!shoulders[0]||!shoulders[1])return null;
  const span=Math.hypot(shoulders[0].x-shoulders[1].x,shoulders[0].y-shoulders[1].y);
  if(span<4)return null;
- const face=joint(0),arms=[];
+ const face=joint(0),skinZones=[];
  function capsule(a,b,r){
   if(!a||!b)return;
   const dx=b.x-a.x,dy=b.y-a.y;
-  arms.push({a,dx,dy,length:dx*dx+dy*dy,r});
+  skinZones.push({a,dx,dy,length:dx*dx+dy*dy,r});
+ }
+ const shoulderCenter={x:(shoulders[0].x+shoulders[1].x)/2,y:(shoulders[0].y+shoulders[1].y)/2};
+ if(face){
+  // Stop above the shirt opening. Only pixels classified as exposed skin can pass.
+  const neck={x:face.x*.18+shoulderCenter.x*.82,y:face.y*.18+shoulderCenter.y*.82};
+  capsule(face,neck,span*.125);
  }
  for(const side of [0,1]){
   const elbow=joint(13+side),wrist=joint(15+side);
-  if(!elbow||!wrist)continue;
-  // Start below the elbow so the new sleeve can still cover the upper arm.
-  capsule({x:elbow.x*.62+wrist.x*.38,y:elbow.y*.62+wrist.y*.38},wrist,span*.16);
+  if(!wrist)continue;
+  if(elbow){
+   const outer=Math.max(shoulders[0].x,shoulders[1].x),inner=Math.min(shoulders[0].x,shoulders[1].x);
+   // A lowered arm alongside the body should still accept a new long sleeve.
+   const across=wrist.x>=inner&&wrist.x<=outer&&wrist.y>=shoulderCenter.y-span*.2;
+   const from=across ? .62 : .12;
+   capsule({x:elbow.x*from+wrist.x*(1-from),y:elbow.y*from+wrist.y*(1-from)},wrist,span*.16);
+  }
   for(const i of [17,19,21])capsule(wrist,joint(i+side),span*.14);
  }
  let count=0;
@@ -70,7 +81,7 @@ function personForeground(classes,points){
   if(id===1||id===3){
    if(face&&Math.hypot(x-face.x,y-face.y)<span*.88)alpha[i]=255;
   }else if(id===2){
-   for(const c of arms){
+   for(const c of skinZones){
     const t=Math.max(0,Math.min(1,((x-c.a.x)*c.dx+(y-c.a.y)*c.dy)/(c.length||1)));
     const d=Math.hypot(x-c.a.x-t*c.dx,y-c.a.y-t*c.dy);
     if(d<c.r){alpha[i]=Math.max(alpha[i],Math.round(255*Math.min(1,c.r-d)));}
