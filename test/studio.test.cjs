@@ -21,3 +21,12 @@ test('reconocedor local acepta entrada aislada y rechaza máscara vacía',()=>{
  const c=app();assert.equal(c.shapeFeatures({width:3,height:3,data:new Uint8Array(36)}),null);
  const features=new Float32Array(196);features.fill(.7,25,150);const r=c.classifyShape(features);assert.ok(r.score>0&&r.score<=1);assert.ok(r.name);
 });
+test('recorte delicado conserva dos zapatos blancos separados y elimina el fondo',()=>{
+ const c=app();vm.runInContext(fs.readFileSync('www/local-cutout.js','utf8'),c);
+ const width=50,height=40,data=new Uint8ClampedArray(width*height*4).fill(255);
+ for(const left of [5,29])for(let y=9;y<=30;y++)for(let x=left;x<left+13;x++){
+  const i=(y*width+x)*4;data.set(y===22?[160,40,40,255]:[231,231,231,255],i);
+ }
+ const mask=c.simpleBackdropMask({width,height,data},true);
+ assert.equal(mask[0],1);assert.equal(mask[15*width+10],0);assert.equal(mask[15*width+34],0);assert.equal(mask[15*width+25],1);
+});

@@ -23,7 +23,7 @@ function action(label,cls,handler){
  button.type='button';button.onclick=handler;return button;
 }
 function thumb(item){
- const img=el('img');img.alt='';img.src=item.image;img.loading='lazy';img.decoding='async';return img;
+ const img=el('img');img.alt='';img.src=item.thumb||item.image;img.loading='lazy';img.decoding='async';return img;
 }
 function smallCard(item,label,handler){
  const button=action(undefined,'thumb-button',handler);
@@ -107,4 +107,14 @@ function bindCatalog(){
  $('#searchClothes').oninput=drawCatalog;
  $('#clearFilters').onclick=()=>{$('#searchClothes').value=$('#filter').value=$('#filterColor').value='';$('#order').value='recent';catalog.favoritesOnly=false;$('#favFilter').setAttribute('aria-pressed','false');drawCatalog();};
  $('#brand').onclick=()=>showTab('home');$('#enterStudio').onclick=()=>showTab('tryon');$('#seeCloset').onclick=()=>showTab('closet');
+}
+
+async function garmentThumbnail(source){
+ const image=await loadImage(source);
+ const scale=Math.min(1,216/Math.max(image.width,image.height));
+ const canvas=document.createElement('canvas');
+ canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));
+ canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);
+ const trimmed=trimGarment(canvas);
+ return trimmed.toDataURL('image/webp',.84);
 }

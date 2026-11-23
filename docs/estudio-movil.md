@@ -31,3 +31,7 @@ Fotografía de portada de Priscilla Du Preez, publicada bajo la licencia Unsplas
 Instrument Serif se distribuye bajo SIL Open Font License. [Aviso incluido](../www/assets/FONT-LICENSE.txt)
 
 Fashion-MNIST de Zalando SE se distribuye bajo MIT. [Fuente y datos](https://github.com/zalandoresearch/fashion-mnist) · [Aviso incluido](../www/assets/FASHION-LICENSE.txt)
+
+La prenda de prueba `checks/fixtures/pantalon.png` procede del primer pantalón del conjunto oficial de prueba de Fashion-MNIST. Se amplió con vecino más próximo y se hizo transparente el fondo para probar el registro de una prenda PNG.
+
+En una foto de calzado blanco prueba **Recorte delicado** antes de quitar el fondo. Restringe el borrado cuando la diferencia de color es pequeña y conserva piezas separadas de tamaño significativo. Dos zonas con píxeles idénticos pueden requerir el pincel. En el probador puedes tocar a través del hueco entre las piernas de un pantalón o de otro espacio transparente para seleccionar la prenda que se ve detrás.

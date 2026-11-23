@@ -12,6 +12,9 @@ function validateBackup(backup) {
  const validId = id => Number.isSafeInteger(id) || (typeof id === 'string' && id.length > 0);
  const validItem = item => item && validId(item.id) && validImage(item.image) &&
   ['name','category','color','style'].every(key => typeof item[key] === 'string') &&
+  (item.thumb === undefined || validImage(item.thumb)) &&
+  (item.favorite === undefined || typeof item.favorite==='boolean') &&
+  (item.secondaryColor === undefined || typeof item.secondaryColor==='string') &&
   (item.original === undefined || validImage(item.original));
  const validComposition=outfit=>{
   if(outfit.composition===undefined)return true;
@@ -33,7 +36,7 @@ function validateBackup(backup) {
  if (backup?.format !== 'mi-armario' || backup.version !== 1 ||
      !Array.isArray(backup.clothes) || !backup.clothes.every(validItem) ||
      !Array.isArray(backup.outfits) || !backup.outfits.every(outfit =>
-      outfit && validId(outfit.id) && typeof outfit.occasion === 'string' &&
+      outfit && validId(outfit.id) && typeof outfit.occasion === 'string' && (outfit.name===undefined||typeof outfit.name==='string') &&
       Array.isArray(outfit.items) && outfit.items.every(validItem) && validComposition(outfit))) {
   throw Error('El archivo no es una copia compatible de Mi Armario.');
  }

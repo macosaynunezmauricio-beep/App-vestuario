@@ -10,7 +10,7 @@ const server=http.createServer((req,res)=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const browser=await chromium.launch({headless:true});
  try{
- const context=await browser.newContext({viewport:{width:412,height:915},acceptDownloads:true});const page=await context.newPage(),errors=[];
+ const context=await browser.newContext({viewport:{width:412,height:915},reducedMotion:'reduce',acceptDownloads:true});const page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>!!db);
  await context.setOffline(true);
  await page.evaluate(async()=>{
@@ -66,6 +66,26 @@ const server=http.createServer((req,res)=>{
  assert.equal(await page.inputValue('#lookName'),'Sábado');
  await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:'test-results/local-tryon.png'});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ // Register a real catalog cutout while offline, then edit its metadata and mask.
+ await page.click('#addClothes');await page.setInputFiles('#photo',path.join(__dirname,'fixtures/pantalon.png'));
+ await page.waitForFunction(()=>!$('#preview').hidden);await page.click('#recognize');
+ await page.waitForFunction(()=>$('#category').value==='Inferior');
+ await page.fill('#name','Pantalón de prueba');await page.selectOption('#color','custom');await page.fill('#customColor','#52354a');
+ await page.selectOption('#secondaryColor','Gris');await page.click('#removeBg');
+ await page.selectOption('#maskBackground','dark');await page.click('#maskApply');
+ await page.waitForFunction(()=>$('#maskEditor').classList.contains('hidden'));
+ await page.selectOption('#color','custom');await page.fill('#customColor','#52354a');await page.selectOption('#secondaryColor','Gris');
+ await page.click('#addform button[type=submit]');
+ await page.waitForFunction(()=>catalog.clothes.some(i=>i.name==='Pantalón de prueba'));
+ const added=await page.evaluate(async()=>{const i=(await all('clothes')).find(i=>i.name==='Pantalón de prueba');return {color:i.color,secondary:i.secondaryColor,thumb:!!i.thumb,original:!!i.original};});
+ assert.deepEqual(added,{color:'#52354a',secondary:'Gris',thumb:true,original:true});
+ await page.click('#filterToggle');await page.click('#clearFilters');await page.getByRole('article').filter({hasText:'Pantalón de prueba'}).getByRole('button',{name:'Editar',exact:true}).click();
+ await page.waitForFunction(()=>$('#name').value==='Pantalón de prueba');assert.equal(await page.inputValue('#customColor'),'#52354a');
+ const hole=await page.evaluate(()=>{
+  const bitmap=document.createElement('canvas');bitmap.width=bitmap.height=100;const ctx=bitmap.getContext('2d');ctx.fillRect(0,0,100,100);ctx.clearRect(40,40,20,20);
+  const l={bitmap,size:100,rotation:0,x:50,y:50,mesh:flatGarmentMesh()};
+  return [garmentHitTest(l,{x:50,y:50},100,100),garmentHitTest(l,{x:20,y:50},100,100)];
+ });assert.deepEqual(hole,[false,true]);
  assert.deepEqual(errors,[]);console.log('PASS offline: wardrobe, named looks, 3 layers, two shoes, mesh/undo/redo, masks, gallery, repeated PNG.');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>server.close());
