@@ -1,0 +1,79 @@
+// Exercise the installed APK through its WebView, then independently read its published PNGs with adb.
+const fs=require('node:fs'),{execFileSync}=require('node:child_process'),assert=require('node:assert/strict'),{createHash}=require('node:crypto');
+const adb=(...args)=>execFileSync('adb',args,{maxBuffer:16*1024*1024});
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function until(check,reason){
+ for(let n=0;n<100;n++){const value=await check();if(value)return value;await wait(400);}
+ throw Error('Timed out: '+reason);
+}
+async function main(){
+ const app='mx.miarmario.personal';
+ adb('shell','svc','wifi','disable');adb('shell','svc','data','disable');
+ adb('shell','am','start','-n',app+'/.MainActivity');
+ const pid=await until(()=>adb('shell','pidof',app).toString().trim(),'process');
+ adb('forward','tcp:9223','localabstract:webview_devtools_remote_'+pid);
+ const target=await until(async()=>{
+  try{return (await (await fetch('http://127.0.0.1:9223/json/list')).json()).find(x=>x.type==='page');}catch{return false;}
+ },'WebView');
+ const socket=new WebSocket(target.webSocketDebuggerUrl.replace(/localhost|127\.0\.0\.1/, '127.0.0.1'));
+ await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject;});
+ const calls=new Map();let seq=0;
+ socket.onmessage=event=>{const msg=JSON.parse(event.data);if(calls.has(msg.id)){calls.get(msg.id)(msg);calls.delete(msg.id);}};
+ async function evaluate(expression){
+  const id=++seq;
+  const reply=new Promise(resolve=>calls.set(id,resolve));
+  socket.send(JSON.stringify({id,method:'Runtime.evaluate',params:{expression,awaitPromise:true,returnByValue:true}}));
+  const msg=await reply;if(msg.error||msg.result.exceptionDetails)throw Error(JSON.stringify(msg.error||msg.result.exceptionDetails));
+  return msg.result.result.value;
+ }
+ try{
+  await until(()=>evaluate("typeof db!=='undefined' && !!db"),'wardrobe');
+  const photo='data:image/jpeg;base64,'+fs.readFileSync(process.argv[2]).toString('base64');
+  await evaluate(`(async()=>{
+   for(const [id,name,category,color] of [[1,'Camisa naranja','Superior','#ef7615'],[2,'Pantalón gris','Inferior','#808080'],[3,'Tenis negros','Calzado','#282828']]){
+    const c=document.createElement('canvas');c.width=140;c.height=category==='Inferior'?300:160;
+    const ctx=c.getContext('2d');ctx.fillStyle=color;ctx.fillRect(4,4,c.width-8,c.height-8);
+    await put('clothes',{id,name,category,color,style:'Casual',image:c.toDataURL()});
+   }await render();showTab('tryon');
+  })()`);
+  for(const size of [360,2200,1000]){
+   await evaluate(`(async()=>{
+    const original=await loadImage(${JSON.stringify(photo)}),c=document.createElement('canvas');c.width=${size};c.height=Math.round(c.width*original.height/original.width);
+    c.getContext('2d').drawImage(original,0,0,c.width,c.height);
+    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.91)),dt=new DataTransfer();
+    dt.items.add(new File([blob],'pose.jpg',{type:'image/jpeg'}));
+    const input=$('#personPhoto');input.files=dt.files;await input.onchange({target:input});
+   })()`);
+   assert.equal(await evaluate('analysis?.length'),33,'native MediaPipe must locate the public test subject');
+   if(size===360){
+    for(const id of [1,2,3])await evaluate(`(async()=>{const item=catalog.clothes.find(i=>i.id===${id});await addGarment(item);})()`);
+   }
+   assert.equal(await evaluate('layers.length'),3);
+   assert.ok(await evaluate("layers.find(l=>l.item.category==='Superior').mesh?.length===9"));
+   const expected=await evaluate(`(async()=>{
+    const png=await compositePng(),img=await readPhoto(png),c=document.createElement('canvas');c.width=img.width;c.height=img.height;
+    const ctx=c.getContext('2d');ctx.drawImage(img,0,0);const p=ctx.getImageData(0,0,c.width,c.height).data;let orange=0,blue=0;
+    for(let i=0;i<p.length;i+=16){if(p[i]>210&&p[i+1]>75&&p[i+1]<160&&p[i+2]<55)orange++;if(p[i+2]>p[i]+22)blue++;}
+    const hash=await crypto.subtle.digest('SHA-256',await png.arrayBuffer());
+    return {hash:Array.from(new Uint8Array(hash),v=>v.toString(16).padStart(2,'0')).join(''),w:c.width,h:c.height,orange,blue};
+   })()`);
+   assert.ok(expected.orange>30&&expected.blue>40,'garment and photograph pixels must be present');
+   for(let repeat=0;repeat<2;repeat++){
+    await evaluate("$('#tryDownload').click()");
+    await until(()=>evaluate("!exportBusy && $('#tryStatus').textContent.includes('Imágenes')"),'gallery save');
+    const rows=adb('shell','content','query','--uri','content://media/external/images/media','--projection','_id:_display_name').toString();
+    const ids=[...rows.matchAll(/_id=(\d+), _display_name=Mi-Armario-/g)].map(m=>Number(m[1]));assert.ok(ids.length);
+    const bytes=adb('exec-out','content','read','--uri','content://media/external/images/media/'+Math.max(...ids));
+    assert.equal(bytes.readUInt32BE(16),expected.w);assert.equal(bytes.readUInt32BE(20),expected.h);
+    assert.equal(createHash('sha256').update(bytes).digest('hex'),expected.hash,'gallery pixels and PNG bytes');
+    assert.equal(adb('shell','pidof',app).toString().trim(),pid);
+   }
+   console.log('PASS Android offline pose and two gallery exports',expected.w,expected.h);
+  }
+  await evaluate("$('#tryShare').click()");
+  await until(()=>/ChooserActivity|ResolverActivity|IntentResolver/.test(adb('shell','dumpsys','activity','activities').toString()),'Android share sheet');
+  adb('shell','input','keyevent','4');await until(()=>evaluate('!exportBusy'),'return to editor');
+  assert.equal(await evaluate('layers.length'),3);console.log('PASS native share sheet, editor kept all layers.');
+ }finally{socket.close();adb('forward','--remove','tcp:9223');}
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});

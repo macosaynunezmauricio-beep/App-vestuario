@@ -26,6 +26,8 @@ function validateBackup(backup) {
     (t.stretch===undefined||(Number.isFinite(t.stretch)&&t.stretch>=.1&&t.stretch<=5)) &&
     (t.opacity===undefined||(Number.isFinite(t.opacity)&&t.opacity>=.2&&t.opacity<=1)) &&
     (t.brightness===undefined||(Number.isFinite(t.brightness)&&t.brightness>=.7&&t.brightness<=1.3)) &&
+    (t.flipX===undefined||typeof t.flipX==='boolean') &&
+    (t.foot===undefined||t.foot===0||t.foot===1) &&
     (t.mesh===undefined||validGarmentMesh(t.mesh)));
  };
  if (backup?.format !== 'mi-armario' || backup.version !== 1 ||
@@ -51,14 +53,10 @@ async function exportWardrobe() {
  ]);
  const blob = new Blob([JSON.stringify({format:'mi-armario',version:1,clothes,outfits})],
   {type:'application/json'});
- const url = URL.createObjectURL(blob);
- const link = document.createElement('a');
- link.href = url;
- link.download = 'mi-armario-respaldo.json';
- document.body.appendChild(link);
- link.click();
- link.remove();
- setTimeout(() => URL.revokeObjectURL(url), 30000);
+ if(window.Capacitor?.isNativePlatform?.()){
+  const result=await sendLocalFile(blob,'backup','save');
+  notify(result.saved?'Copia de seguridad guardada.':'Guardado cancelado.');
+ }else{downloadBlob(blob,'mi-armario-respaldo.json');}
 }
 
 async function importWardrobe(file) {

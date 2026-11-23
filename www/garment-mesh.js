@@ -42,11 +42,22 @@ function meshTriangle(ctx,image,src,dst){
  ctx.transform(xx,yx,xy,yy,xt,yt);ctx.drawImage(image,0,0);ctx.restore();
 }
 let garmentSurface=null;
+const reflectedGarments=new WeakMap();
+function garmentTexture(layer){
+ if(!layer.flipX)return layer.bitmap;
+ if(!reflectedGarments.has(layer.bitmap)){
+  const c=document.createElement('canvas');c.width=layer.bitmap.width;c.height=layer.bitmap.height;
+  const x=c.getContext('2d');x.translate(c.width,0);x.scale(-1,1);x.drawImage(layer.bitmap,0,0);
+  reflectedGarments.set(layer.bitmap,c);
+ }
+ return reflectedGarments.get(layer.bitmap);
+}
 function renderGarment(ctx,layer,width,height){
+ const texture=garmentTexture(layer);
  const f=garmentFrame(layer,width,height);
  if(!layer.mesh){
   ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.angle);ctx.globalAlpha=layer.opacity??1;ctx.filter='brightness('+(layer.brightness??1)+')';
-  ctx.drawImage(layer.bitmap,-f.w/2,-f.h/2,f.w,f.h);ctx.restore();return;
+  ctx.drawImage(texture,-f.w/2,-f.h/2,f.w,f.h);ctx.restore();return;
  }
  // One reusable surface bounds memory and applies opacity only once after triangles overlap.
  if(!garmentSurface)garmentSurface=document.createElement('canvas');
@@ -58,7 +69,7 @@ function renderGarment(ctx,layer,width,height){
  for(let y=0;y<count;y++)for(let x=0;x<count;x++){
   const uv=[[x/count,y/count],[(x+1)/count,y/count],[(x+1)/count,(y+1)/count],[x/count,(y+1)/count]];
   const source=uv.map(([u,v])=>({x:u*layer.bitmap.width,y:v*layer.bitmap.height})),target=uv.map(([u,v])=>dest(u,v));
-  for(const ids of [[0,1,2],[0,2,3]])meshTriangle(targetCtx,layer.bitmap,ids.map(i=>source[i]),ids.map(i=>target[i]));
+  for(const ids of [[0,1,2],[0,2,3]])meshTriangle(targetCtx,texture,ids.map(i=>source[i]),ids.map(i=>target[i]));
  }
  targetCtx.restore();
  ctx.save();ctx.globalAlpha=layer.opacity??1;ctx.filter='brightness('+(layer.brightness??1)+')';ctx.drawImage(garmentSurface,0,0);ctx.restore();
