@@ -25,6 +25,9 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#stageActions').isVisible(),false);
  }
  await page.setViewportSize({width:412,height:915});
+ fs.mkdirSync('test-results',{recursive:true});
+ await page.screenshot({path:'test-results/probador-vacio.png'});
+ await page.click('#addClothes');await page.screenshot({path:'test-results/registro.png'});
  await page.evaluate(async()=>{
   const c=document.createElement('canvas');c.width=200;c.height=300;const x=c.getContext('2d');
   const items=[];
@@ -70,7 +73,6 @@ const server=http.createServer((req,res)=>{
   let min=255;for(let i=3;i<data.length;i+=4)min=Math.min(min,data[i]);return min;
  });assert.ok(alpha>=245,'opaque mesh interior should not show grid seams: '+alpha);
  assert.equal(await page.locator('#realisticTry').count(),0);assert.equal(await page.locator('#serverUrl').count(),0);
- fs.mkdirSync('test-results',{recursive:true});
  for(let i=0;i<3;i++){
   const waiting=page.waitForEvent('download');await page.click('#tryDownload');const download=await waiting;
   const bytes=fs.readFileSync(await download.path());assert.equal(bytes.subarray(1,4).toString(),'PNG');assert.equal(bytes.readUInt32BE(16),600);

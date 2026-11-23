@@ -18,6 +18,7 @@
     "Helvetica Neue",
     sans-serif;
   color-scheme: light;
+  scroll-padding-bottom: calc(72px + env(safe-area-inset-bottom));
 }
 * {
   box-sizing: border-box;
@@ -254,15 +255,7 @@ small {
 }
 .file-button,
 .photo-picker {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface);
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  min-height: 54px;
+  position: relative;
 }
 .file-button input,
 .photo-picker input {
@@ -493,13 +486,14 @@ input[type="checkbox"] {
 }
 .photo-picker {
   display: flex;
-  gap: 9px;
+  gap: 10px;
   align-items: center;
-  background: var(--soft);
+  justify-content: center;
+  background: var(--surface);
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  min-height: 70px;
+  border-radius: 8px;
+  min-height: 54px;
 }
 .preview {
   max-width: 100%;
