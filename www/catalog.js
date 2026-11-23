@@ -53,10 +53,11 @@ function card(item,editable=false){
   fav.setAttribute('aria-label',(item.favorite?'Quitar de favoritas: ':'Marcar favorita: ')+item.name);
   fav.setAttribute('aria-pressed',String(!!item.favorite));node.append(fav);
   const buttons=el('div','card-actions');
-  buttons.append(action('Probar','secondary',()=>{showTab('tryon');addGarment(item);}),action('Editar','text-action',()=>editItem(item)));
-  const more=el('details','more-actions');more.append(el('summary','','Más opciones'),action('Eliminar prenda','danger',async()=>{
+  buttons.append(action('Probar','secondary',()=>{showTab('tryon');addGarment(item);}));
+  const more=el('details','more-actions');const summary=el('summary','','Opciones');summary.setAttribute('aria-label','Opciones de '+item.name);
+  more.append(summary,action('Editar','text-action',()=>editItem(item)),action('Eliminar prenda','danger',async()=>{
    if(confirm('¿Eliminar «'+item.name+'» del armario?')){await remove('clothes',item.id);await render();}
-  }));info.append(buttons,more);
+  }));buttons.append(more);info.append(buttons);
  }
  node.append(info);return node;
 }
