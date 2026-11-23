@@ -19,6 +19,7 @@ function bindCropGestures(){
  $('#maskBackground').onchange=e=>{view.dataset.background=e.target.value;};
  view.addEventListener('pointerdown',e=>{
   if(!maskBase||touches.size>=2)return;
+  if(tapArmed){if(!tapBusy)selectFromTap(maskPoint(e));return;}
   const p={x:e.clientX,y:e.clientY};touches.set(e.pointerId,p);view.setPointerCapture(e.pointerId);
   if(touches.size===2){
    if(maskPointer!==null&&maskHistory.length){mx.putImageData(maskHistory.pop(),0,0);maskFuture=previousFuture;}

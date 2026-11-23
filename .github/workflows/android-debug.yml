@@ -2,7 +2,7 @@ name: Compilar APK de prueba
 on:
   workflow_dispatch:
   push:
-    branches: [main, review/mi-armario-5.4, review/mi-armario-integral, review/tryon-fidelity, review/local-garment-shaping, review/estudio-movil, review/ajuste-fotografico, review/estilo-minimalista, review/probador-articulado]
+    branches: [main, review/mi-armario-5.4, review/mi-armario-integral, review/tryon-fidelity, review/local-garment-shaping, review/estudio-movil, review/ajuste-fotografico, review/estilo-minimalista, review/probador-articulado, review/recorte-y-primer-plano]
   pull_request:
     branches: [main]
 permissions:
@@ -46,7 +46,12 @@ jobs:
           mkdir -p android/app/src/main/assets
           curl -fL --retry 3 https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task -o android/app/src/main/assets/pose_landmarker_lite.task
           echo '59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a  android/app/src/main/assets/pose_landmarker_lite.task' | sha256sum -c -
-          printf "\ndependencies { implementation 'com.google.mediapipe:tasks-vision:0.10.14' }\n" >> android/app/build.gradle
+          assets=android/app/src/main/assets
+          curl -fL --retry 3 https://storage.googleapis.com/mediapipe-models/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite -o "$assets/magic_touch.tflite"
+          curl -fL --retry 3 https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/1/selfie_multiclass_256x256.tflite -o "$assets/selfie_multiclass.tflite"
+          echo "e24338a717c1b7ad8d159666677ef400babb7f33b8ad60c4d96db4ecf694cd25  $assets/magic_touch.tflite" | sha256sum -c -
+          echo "c6748b1253a99067ef71f7e26ca71096cd449baefa8f101900ea23016507e0e0  $assets/selfie_multiclass.tflite" | sha256sum -c -
+          printf "\ndependencies { implementation 'com.google.mediapipe:tasks-vision:0.10.14'\nimplementation 'org.tensorflow:tensorflow-lite:2.16.1' }\n" >> android/app/build.gradle
       - name: Sincronizar
         run: npx cap sync android
       - name: Compilar APK

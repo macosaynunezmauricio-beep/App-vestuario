@@ -8,22 +8,23 @@
 <label class="searchbox"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg><input id="searchClothes" type="search" placeholder="Buscar nombre, color o categoría" aria-label="Buscar prendas"></label>
 <div class="filter-row"><button id="favFilter" class="chip" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-heart"></use></svg>Favoritas</button><button id="filterToggle" class="chip" aria-expanded="false" aria-controls="catalogFilters"><svg class="icon" aria-hidden="true"><use href="#i-filter"></use></svg>Filtros</button></div>
 <div id="catalogFilters" class="field-grid panel" hidden><label>Categoría<select id="filter"><option value="">Todas</option><option>Superior</option><option>Inferior</option><option>Exterior</option><option>Vestido</option><option>Calzado</option><option>Accesorio</option></select></label><label>Color<select id="filterColor"></select></label><label>Orden<select id="order"><option value="recent">Más recientes</option><option value="name">Nombre</option><option value="category">Categoría</option></select></label><button id="clearFilters" class="text-action">Limpiar filtros</button></div>
-<div id="items" class="grid"></div></section><section id="add" class="hidden"><div class="panel"><h2 id="registrationTitle">Añadir prenda</h2><form id="addform"><h3>Fotografía</h3><div class="photo-pickers"><label class="photo-picker"><svg class="icon" aria-hidden="true"><use href="#i-image"></use></svg><strong>Galería</strong><input id="photo" type="file" accept="image/*"></label><label class="photo-picker"><svg class="icon" aria-hidden="true"><use href="#i-camera"></use></svg><strong>Tomar foto</strong><input id="cameraPhoto" type="file" accept="image/*" capture="environment"></label></div><h3>Recorte y detalles</h3><button type="button" id="recognize" class="secondary">Sugerir categoría</button><p id="aiStatus" class="muted" role="status">Reconoce la silueta de una prenda recortada en tu teléfono.</p><button type="button" id="removeBg" class="secondary">Editar recorte</button> <button type="button" id="autoCut">Quitar fondo</button><label class="compare"><input type="checkbox" id="gentleCut">Recorte delicado para calzado o tonos similares</label><label class="compare"><input id="shadowCut" type="checkbox">Limpiar sombras de fondo claro en prendas oscuras</label><p id="bgStatus" class="muted" role="status">Recorte local para fondos lisos. Puedes retocarlo con el pincel.</p><img id="preview" class="preview" alt="Vista previa de la prenda" hidden><div id="maskEditor" class="hidden"><h3>Corregir selección de prenda</h3><p class="muted">Pellizca con dos dedos para ampliar. Usa el pincel para borrar o recuperar detalles.</p><div id="maskView" data-background="grid"><canvas id="maskCanvas" aria-label="Máscara de la prenda"></canvas></div><div class="actions"><button type="button" class="chip" id="panMask" aria-pressed="false">Mover vista</button><button type="button" class="secondary" id="zoomMask" aria-label="Restablecer zoom">100 %</button><label>Fondo<select id="maskBackground"><option value="grid">Cuadros</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></label></div><div class="trycontrols"><div><label for="brushSize">Tamaño del pincel</label><input id="brushSize" type="range" min="5" max="120" value="35"></div><div><label for="maskMode">Herramienta</label><select id="maskMode"><option value="erase">Borrar</option><option value="restore">Recuperar</option></select></div><div><label for="edgeSoftness">Suavizado del pincel</label><input id="edgeSoftness" type="range" min="0" max="100" value="25"></div></div><button type="button" id="maskUndo" class="secondary">Deshacer</button> <button type="button" id="maskRedo" class="secondary">Rehacer</button> <button type="button" id="maskReset" class="secondary">Reiniciar máscara</button> <button type="button" id="maskApply">Aplicar recorte</button><p id="maskStatus" class="muted" role="status"></p></div><button type="button" id="restorePhoto" class="secondary hidden">Restaurar fotografía original</button><label for="name">Nombre</label><input id="name" maxlength="60" placeholder="Ej. Camisa blanca" required><label for="category">Categoría</label><select id="category"><option>Superior</option><option>Inferior</option><option>Calzado</option><option>Accesorio</option><option>Exterior</option><option>Vestido</option></select><label for="color">Color</label><select id="color"><option>Negro</option><option>Blanco</option><option>Gris</option><option>Azul</option><option>Beige</option><option>Café</option><option>Verde</option><option>Rojo</option><option>Rosa</option><option>Amarillo</option><option>Azul marino</option><option>Celeste</option><option>Turquesa</option><option>Verde oliva</option><option>Verde militar</option><option>Vino</option><option>Fucsia</option><option>Naranja</option><option>Mostaza</option><option>Morado</option><option>Lila</option><option>Crema</option><option>Arena</option><option>Dorado</option><option>Otro</option></select><label id="customWrap" hidden>Color personalizado<input id="customColor" type="color" value="#788049"></label><label for="secondaryColor">Color secundario</label><select id="secondaryColor"></select><label for="styleInput">Estilo</label><select id="styleInput"><option>Casual</option><option>Formal</option><option>Deportivo</option><option>Versátil</option></select><button type="submit">Guardar prenda</button></form></div></section><section id="style" class="hidden"><h1>Combinar</h1><div class="panel"><label for="occasion">¿Para qué ocasión?</label><select id="occasion"><option>Casual</option><option>Formal</option><option>Deportivo</option></select><button id="generate">Crear combinación</button><div id="suggestion"></div></div></section><section id="tryon" class="hidden"><div class="section-title" id="stageHeading"><h1>Probador</h1><label class="file-button" id="changePhoto"><svg class="icon" aria-hidden="true"><use href="#i-image"></use></svg><span>Elegir foto</span><input type="file" id="personPhoto" accept="image/*"></label></div>
+<div id="items" class="grid"></div></section><section id="add" class="hidden"><div class="panel"><h2 id="registrationTitle">Añadir prenda</h2><form id="addform"><h3>Fotografía</h3><div class="photo-pickers"><label class="photo-picker"><svg class="icon" aria-hidden="true"><use href="#i-image"></use></svg><strong>Galería</strong><input id="photo" type="file" accept="image/*"></label><label class="photo-picker"><svg class="icon" aria-hidden="true"><use href="#i-camera"></use></svg><strong>Tomar foto</strong><input id="cameraPhoto" type="file" accept="image/*" capture="environment"></label></div><h3>Recorte y detalles</h3><button type="button" id="recognize" class="secondary">Sugerir categoría</button><p id="aiStatus" class="muted" role="status">Reconoce la silueta de una prenda recortada en tu teléfono.</p><button type="button" id="removeBg" class="secondary">Editar recorte</button> <button type="button" id="autoCut">Quitar fondo</button><label class="compare"><input type="checkbox" id="gentleCut">Recorte delicado para calzado o tonos similares</label><label class="compare"><input id="shadowCut" type="checkbox">Limpiar sombras de fondo claro en prendas oscuras</label><p id="bgStatus" class="muted" role="status">Recorte local para fondos lisos. Puedes retocarlo con el pincel.</p><img id="preview" class="preview" alt="Vista previa de la prenda" hidden><div id="maskEditor" class="hidden"><h3>Corregir selección de prenda</h3><p class="muted">Pellizca con dos dedos para ampliar. Usa el pincel para borrar o recuperar detalles.</p><div id="tapTools" hidden><label>Tipo de foto<select id="wornPart"><option value="loose">Prenda suelta</option><option value="upper">Parte superior puesta</option><option value="lower">Parte inferior puesta</option><option value="whole">Ropa puesta completa</option></select></label><div class="actions"><button type="button" class="secondary" id="tapSelect" aria-pressed="false">Seleccionar por toque</button><select id="tapOperation" aria-label="Acción sobre la selección"><option value="replace">Reemplazar selección</option><option value="add">Sumar zona</option><option value="subtract">Restar zona</option></select></div></div><div id="maskView" data-background="grid"><canvas id="maskCanvas" aria-label="Máscara de la prenda"></canvas></div><div class="actions"><button type="button" class="chip" id="panMask" aria-pressed="false">Mover vista</button><button type="button" class="secondary" id="zoomMask" aria-label="Restablecer zoom">100 %</button><label>Fondo<select id="maskBackground"><option value="grid">Cuadros</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></label></div><div class="trycontrols"><div><label for="brushSize">Tamaño del pincel</label><input id="brushSize" type="range" min="5" max="120" value="35"></div><div><label for="maskMode">Herramienta</label><select id="maskMode"><option value="erase">Borrar</option><option value="restore">Recuperar</option></select></div><div><label for="edgeSoftness">Suavizado del pincel</label><input id="edgeSoftness" type="range" min="0" max="100" value="25"></div></div><button type="button" id="maskUndo" class="secondary">Deshacer</button> <button type="button" id="maskRedo" class="secondary">Rehacer</button> <button type="button" id="maskReset" class="secondary">Reiniciar máscara</button> <button type="button" id="maskApply">Aplicar recorte</button><p id="maskStatus" class="muted" role="status"></p></div><button type="button" id="restorePhoto" class="secondary hidden">Restaurar fotografía original</button><label for="name">Nombre</label><input id="name" maxlength="60" placeholder="Ej. Camisa blanca" required><label for="category">Categoría</label><select id="category"><option>Superior</option><option>Inferior</option><option>Calzado</option><option>Accesorio</option><option>Exterior</option><option>Vestido</option></select><label for="color">Color</label><select id="color"><option>Negro</option><option>Blanco</option><option>Gris</option><option>Azul</option><option>Beige</option><option>Café</option><option>Verde</option><option>Rojo</option><option>Rosa</option><option>Amarillo</option><option>Azul marino</option><option>Celeste</option><option>Turquesa</option><option>Verde oliva</option><option>Verde militar</option><option>Vino</option><option>Fucsia</option><option>Naranja</option><option>Mostaza</option><option>Morado</option><option>Lila</option><option>Crema</option><option>Arena</option><option>Dorado</option><option>Otro</option></select><label id="customWrap" hidden>Color personalizado<input id="customColor" type="color" value="#788049"></label><label for="secondaryColor">Color secundario</label><select id="secondaryColor"></select><label for="styleInput">Estilo</label><select id="styleInput"><option>Casual</option><option>Formal</option><option>Deportivo</option><option>Versátil</option></select><button type="submit">Guardar prenda</button></form></div></section><section id="style" class="hidden"><h1>Combinar</h1><div class="panel"><label for="occasion">¿Para qué ocasión?</label><select id="occasion"><option>Casual</option><option>Formal</option><option>Deportivo</option></select><button id="generate">Crear combinación</button><div id="suggestion"></div></div></section><section id="tryon" class="hidden"><div class="section-title" id="stageHeading"><h1>Probador</h1><label class="file-button" id="changePhoto"><svg class="icon" aria-hidden="true"><use href="#i-image"></use></svg><span>Elegir foto</span><input type="file" id="personPhoto" accept="image/*"></label></div>
 <div class="stage" id="stage"><canvas id="tryCanvas" class="trycanvas" width="600" height="800" aria-label="Tu fotografía con el conjunto"></canvas><div id="stageEmpty"><svg class="icon" aria-hidden="true"><use href="#i-tryon"></use></svg><h2>Tu foto de cuerpo entero</h2></div></div>
 <div class="stage-actions" id="stageActions" hidden><label class="compare"><input id="comparePerson" type="checkbox"> Ver original</label><div><button id="undoLayer" class="icon-button" aria-label="Deshacer"><svg class="icon" aria-hidden="true"><use href="#i-undo"></use></svg></button><button id="redoLayer" class="icon-button" aria-label="Rehacer"><svg class="icon" aria-hidden="true"><use href="#i-redo"></use></svg></button></div></div>
 <p id="fitStatus" role="status" class="muted" hidden></p>
 <div class="panel studio-tools"><h2>Añadir al conjunto</h2><div class="rail" id="garmentRail"></div>
 <div id="layerTools" hidden><div class="rule"></div><label>Prenda en edición</label><div id="layerChips" class="chips"></div>
 <div class="actions"><button id="autoFit" type="button"><svg class="icon" aria-hidden="true"><use href="#i-fit"></use></svg>Ajustar al cuerpo</button><button id="guideFit" class="secondary" type="button">Marcar dos esquinas</button></div>
-<details id="collarTools" class="try-extra"><summary>Cuello de la camisa</summary><p class="muted">Abre el hueco de la percha para que se vea esa zona de tu foto. Ajusta la abertura entre las solapas.</p><button id="toggleCollar" type="button" class="secondary" aria-pressed="false">Abrir cuello</button><div id="collarSliders" hidden><label>Centro<input id="neckCenter" type="range" min="25" max="75" value="50"></label><label>Ancho<input id="neckWidth" type="range" min="8" max="48" value="24"></label><label>Profundidad<input id="neckDepth" type="range" min="3" max="45" value="22"></label></div></details><button id="pairShoe" class="secondary" type="button" hidden>Probar también en el otro pie</button><div class="shape-tools"><button id="shapeGarment" class="secondary" type="button" aria-pressed="false">Dar forma a la prenda</button> <button id="shapeReset" type="button" class="text-action">Restablecer forma</button><p id="shapeHint" class="muted" hidden>Arrastra un punto de la prenda para corregir su contorno.</p></div><details class="try-extra"><summary>Manos y brazos delante de la ropa</summary><p class="muted">Pinta las zonas de tu foto original que deben aparecer por delante. También recuperará cualquier ropa que aparezca en esa zona.</p><button type="button" id="occlusionToggle" aria-pressed="false">Pintar zonas al frente</button><label for="occlusionMode">Pincel</label><select id="occlusionMode"><option value="front">Traer foto original al frente</option><option value="clothes">Volver a mostrar las prendas</option></select><label for="occlusionSize">Tamaño del pincel</label><input type="range" id="occlusionSize" min="1" max="15" value="4"><button type="button" id="occlusionReset" class="secondary">Limpiar zonas pintadas</button></details><details class="try-extra"><summary>Ajustes de las prendas</summary><select id="activeLayer" aria-label="Prenda que estás editando"></select><div class="row"><button id="raiseLayer">Traer al frente</button><button id="lowerLayer">Enviar hacia atrás</button><button id="toggleLayer">Ocultar o mostrar</button></div><label for="garmentLight">Luz de la prenda</label><input id="garmentLight" type="range" min="70" max="130" value="100"><label for="garmentOpacity">Transparencia para alinear</label><input id="garmentOpacity" type="range" min="20" max="100" value="100"><button id="removeLayer">Quitar prenda</button> <div class="trycontrols"><div><label for="trySize">Tamaño</label><input id="trySize" type="range" min="5" max="140" value="55"></div><div><label for="tryRotation">Rotación</label><input id="tryRotation" type="range" min="-180" max="180" value="0"></div><div><label for="tryX">Horizontal</label><input id="tryX" type="range" min="0" max="100" value="50"></div><div><label for="tryY">Vertical</label><input id="tryY" type="range" min="0" max="100" value="38"></div></div><button type="button" class="secondary" id="tryReset">Restablecer posición</button></details></div></div>
+<details id="collarTools" class="try-extra"><summary>Cuello de la camisa</summary><p class="muted">Abre el hueco de la percha para que se vea esa zona de tu foto. Ajusta la abertura entre las solapas.</p><button id="toggleCollar" type="button" class="secondary" aria-pressed="false">Abrir cuello</button><div id="collarSliders" hidden><label>Centro<input id="neckCenter" type="range" min="25" max="75" value="50"></label><label>Ancho<input id="neckWidth" type="range" min="8" max="48" value="24"></label><label>Profundidad<input id="neckDepth" type="range" min="3" max="45" value="22"></label></div></details><button id="pairShoe" class="secondary" type="button" hidden>Probar también en el otro pie</button><div class="shape-tools"><button id="shapeGarment" class="secondary" type="button" aria-pressed="false">Dar forma a la prenda</button> <button id="shapeReset" type="button" class="text-action">Restablecer forma</button><p id="shapeHint" class="muted" hidden>Arrastra un punto de la prenda para corregir su contorno.</p></div><details class="try-extra"><summary>Manos y brazos delante de la ropa</summary><div id="nativeFront" hidden><button type="button" id="detectFront" class="secondary" aria-pressed="false">Proteger manos y rostro</button><p id="frontStatus" class="muted" role="status"></p></div><p class="muted">Pinta las zonas de tu foto original que deben aparecer por delante. También recuperará cualquier ropa que aparezca en esa zona.</p><button type="button" id="occlusionToggle" aria-pressed="false">Pintar zonas al frente</button><label for="occlusionMode">Pincel</label><select id="occlusionMode"><option value="front">Traer foto original al frente</option><option value="clothes">Volver a mostrar las prendas</option></select><label for="occlusionSize">Tamaño del pincel</label><input type="range" id="occlusionSize" min="1" max="15" value="4"><button type="button" id="occlusionReset" class="secondary">Limpiar zonas pintadas</button></details><details class="try-extra"><summary>Ajustes de las prendas</summary><select id="activeLayer" aria-label="Prenda que estás editando"></select><div class="row"><button id="raiseLayer">Traer al frente</button><button id="lowerLayer">Enviar hacia atrás</button><button id="toggleLayer">Ocultar o mostrar</button></div><label for="garmentLight">Luz de la prenda</label><input id="garmentLight" type="range" min="70" max="130" value="100"><label for="garmentOpacity">Transparencia para alinear</label><input id="garmentOpacity" type="range" min="20" max="100" value="100"><button id="removeLayer">Quitar prenda</button> <div class="trycontrols"><div><label for="trySize">Tamaño</label><input id="trySize" type="range" min="5" max="140" value="55"></div><div><label for="tryRotation">Rotación</label><input id="tryRotation" type="range" min="-180" max="180" value="0"></div><div><label for="tryX">Horizontal</label><input id="tryX" type="range" min="0" max="100" value="50"></div><div><label for="tryY">Vertical</label><input id="tryY" type="range" min="0" max="100" value="38"></div></div><button type="button" class="secondary" id="tryReset">Restablecer posición</button></details></div></div>
 <div class="panel"><h2>Mi conjunto</h2><label for="lookName">Nombre del conjunto</label><input id="lookName" maxlength="60" placeholder="Ej. Salida del sábado"><div class="actions"><button id="saveLook"><svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>Guardar conjunto</button><button id="saveCopy" class="text-action" hidden>Guardar copia</button><button id="tryDownload" class="secondary"><svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>Guardar imagen</button><button id="tryShare" class="secondary" hidden><svg class="icon" aria-hidden="true"><use href="#i-share"></use></svg>Compartir</button></div>
-<p id="tryStatus" class="muted" role="status"></p><details id="reopen" class="try-extra"><summary>Abrir un conjunto guardado</summary><select id="savedLooks" aria-label="Conjuntos guardados"></select><button id="loadLook" class="secondary">Abrir conjunto</button></details></div></section><section id="saved" class="hidden"><h1>Conjuntos guardados</h1><div id="favorites"></div></section></main><script src="local-cutout.js"></script><script src="layers.js"></script><script src="body-fit.js"></script><script src="garment-mesh.js"></script><script src="photo-occlusion.js"></script><script src="backup.js"></script><script src="catalog.js"></script><script src="fashion-weights.js"></script><script src="recognition.js"></script><script src="colors.js"></script><script src="crop-gestures.js"></script><script src="export.js"></script><script>
+<p id="tryStatus" class="muted" role="status"></p><details id="reopen" class="try-extra"><summary>Abrir un conjunto guardado</summary><select id="savedLooks" aria-label="Conjuntos guardados"></select><button id="loadLook" class="secondary">Abrir conjunto</button></details></div></section><section id="saved" class="hidden"><h1>Conjuntos guardados</h1><div id="favorites"></div></section></main><script src="local-cutout.js"></script><script src="layers.js"></script><script src="body-fit.js"></script><script src="garment-mesh.js"></script><script src="photo-occlusion.js"></script><script src="vision-masks.js"></script><script src="wardrobe-vision.js"></script><script src="backup.js"></script><script src="catalog.js"></script><script src="fashion-weights.js"></script><script src="recognition.js"></script><script src="colors.js"></script><script src="crop-gestures.js"></script><script src="export.js"></script><script>
 const $ = selector => document.querySelector(selector);
 let selectedPhoto=null, editing=null, cutoutBlob=null, cutoutUrl=null;
 const mc=$('#maskCanvas'),mx=mc.getContext('2d',{willReadFrequently:true});
 let maskBase=null, maskHistory=[], maskFuture=[], maskPointer=null, maskLast=null;
 
 function resetCutout(){
+ updateTap();tapSource=null;
  cutoutBlob=null;
  if(cutoutUrl)URL.revokeObjectURL(cutoutUrl);
  cutoutUrl=null;
@@ -81,12 +82,12 @@ $('#removeBg').onclick=async()=>{
   maskBase=mx.getImageData(0,0,mc.width,mc.height);
   mx.clearRect(0,0,mc.width,mc.height);
   mx.drawImage(base,0,0,mc.width,mc.height);
-  $('#maskEditor').classList.remove('hidden');resetCropView();
+  $('#maskEditor').classList.remove('hidden');resetCropView();updateTap();tapSource=null;$('#tapOperation').value='replace';
   $('#maskStatus').textContent='Usa Borrar para quitar el fondo y Recuperar para corregir.';
  }catch{notify('No se pudo abrir el editor.');}
 };
 $('#autoCut').onclick=async()=>{
- const button=$('#autoCut');
+ updateTap();const button=$('#autoCut');
  button.disabled=true;
  try{
   await $('#removeBg').onclick();
@@ -108,27 +109,32 @@ $('#autoCut').onclick=async()=>{
 function maskPoint(e){const r=mc.getBoundingClientRect();return {x:(e.clientX-r.left)*mc.width/r.width,y:(e.clientY-r.top)*mc.height/r.height}}
 function maskStroke(a,b){const radius=Number($('#brushSize').value)*mc.width/mc.getBoundingClientRect().width/2, mode=$('#maskMode').value;
  const softness=Number($('#edgeSoftness').value)/100;
- const data=mx.getImageData(0,0,mc.width,mc.height),v=data.data,orig=maskBase.data;
+ const left=Math.max(0,Math.floor(Math.min(a.x,b.x)-radius)),top=Math.max(0,Math.floor(Math.min(a.y,b.y)-radius));
+ const right=Math.min(mc.width,Math.ceil(Math.max(a.x,b.x)+radius)),bottom=Math.min(mc.height,Math.ceil(Math.max(a.y,b.y)+radius));
+ if(right<=left||bottom<=top)return;
+ const data=mx.getImageData(left,top,right-left,bottom-top),v=data.data,orig=maskBase.data;
  const distance=Math.hypot(b.x-a.x,b.y-a.y),steps=Math.max(1,Math.ceil(distance/(radius*.45)));
  for(let j=0;j<=steps;j++){const x=a.x+(b.x-a.x)*j/steps,y=a.y+(b.y-a.y)*j/steps;
   for(let py=Math.max(0,Math.floor(y-radius));py<Math.min(mc.height,Math.ceil(y+radius));py++)for(let px=Math.max(0,Math.floor(x-radius));px<Math.min(mc.width,Math.ceil(x+radius));px++){
-   const d=Math.hypot(px-x,py-y);if(d>radius)continue;const k=(py*mc.width+px)*4;
+   const d=Math.hypot(px-x,py-y);if(d>radius)continue;const k=((py-top)*data.width+px-left)*4,source=(py*mc.width+px)*4;
    const coverage=softness?Math.min(1,(radius-d)/(radius*softness)):1;
    if(mode==='erase')v[k+3]=Math.round(v[k+3]*(1-coverage));
-   else if(orig[k+3]){
-    for(let c=0;c<3;c++)v[k+c]=orig[k+c];
-    v[k+3]=Math.max(v[k+3],Math.round(orig[k+3]*coverage));
+   else if(orig[source+3]){
+    for(let c=0;c<3;c++)v[k+c]=orig[source+c];
+    v[k+3]=Math.max(v[k+3],Math.round(orig[source+3]*coverage));
    }
   }
  }
- mx.putImageData(data,0,0);
+ mx.putImageData(data,left,top);
 }
 function rememberMask(){
+ if(tapArmed)updateTap();
  maskHistory.push(mx.getImageData(0,0,mc.width,mc.height));
  if(maskHistory.length>6)maskHistory.shift();
  maskFuture=[];
 }
 function restoreMask(from,to){
+ if(tapArmed)updateTap();
  if(maskPointer!==null||!from.length)return;
  to.push(mx.getImageData(0,0,mc.width,mc.height));
  mx.putImageData(from.pop(),0,0);
@@ -142,7 +148,7 @@ $('#maskReset').onclick=()=>{
 };
 $('#maskApply').onclick=async()=>{
  if(!maskBase||maskPointer!==null)return;
- const base=maskBase;
+ const base=maskBase;updateTap();tapSource=null;
  const blob=await new Promise(resolve=>mc.toBlob(resolve,'image/png'));
  if(!blob||base!==maskBase)return;
  cutoutBlob=blob;
@@ -240,14 +246,18 @@ let shaping=false,shapeDrag=null,occlusionEditing=false,occlusionDrag=null,occlu
 const frontMask=document.createElement('canvas'),frontPhoto=document.createElement('canvas');
 function rebuildOcclusion(){
  frontMask.width=frontPhoto.width=tc.width;frontMask.height=frontPhoto.height=tc.height;
- const mask=frontMask.getContext('2d');
+ const mask=frontMask.getContext('2d');frontDirty=true;
+ if(automaticFront)mask.drawImage(alphaCanvas(automaticFront.w,automaticFront.h,unpackMask(automaticFront)),0,0,tc.width,tc.height);
  for(const stroke of occlusion)paintOcclusion(mask,stroke,tc.width,tc.height);
 }
-function drawOcclusion(){
- if(!personImage||!occlusion.length)return;
- const ctx=frontPhoto.getContext('2d');ctx.clearRect(0,0,tc.width,tc.height);
- ctx.drawImage(personImage,0,0,tc.width,tc.height);ctx.globalCompositeOperation='destination-in';ctx.drawImage(frontMask,0,0);ctx.globalCompositeOperation='source-over';
- tctx.drawImage(frontPhoto,0,0);
+function drawOcclusion(target=tctx){
+ if(!personImage||(!automaticFront&&!occlusion.length))return;
+ if(frontDirty){
+  const ctx=frontPhoto.getContext('2d');ctx.clearRect(0,0,tc.width,tc.height);
+  ctx.drawImage(personImage,0,0,tc.width,tc.height);ctx.globalCompositeOperation='destination-in';
+  ctx.drawImage(frontMask,0,0);ctx.globalCompositeOperation='source-over';frontDirty=false;
+ }
+ target.drawImage(frontPhoto,0,0);
 }
 const past=[],future=[];
 const tc=$('#tryCanvas'),tctx=tc.getContext('2d');
@@ -281,6 +291,7 @@ function drawTry(clean=false){
 }
 const controls={trySize:'size',tryRotation:'rotation',tryX:'x',tryY:'y'};
 function syncLayers(){
+ syncFrontButton();
  $('#stageEmpty').hidden=!!personImage||layers.length>0;tc.hidden=!$('#stageEmpty').hidden;
  const photoAction=$('#changePhoto'), empty=!$('#stageEmpty').hidden;
  const photoHost=empty?$('#stageEmpty'):$('#stageHeading');
@@ -319,14 +330,14 @@ function syncLayers(){
  }
  drawTry();
 }
-function snapshot(){return {layers:layers.map(layer=>({...layer,mesh:layer.mesh?.map(p=>({...p}))})),active,occlusion:occlusion.map(stroke=>({...stroke,points:stroke.points.map(p=>({...p}))}))};}
+function snapshot(){return {layers:layers.map(layer=>({...layer,mesh:layer.mesh?.map(p=>({...p}))})),active,automaticFront,occlusion:occlusion.map(stroke=>({...stroke,points:stroke.points.map(p=>({...p}))}))};}
 function remember(){
  past.push(snapshot());if(past.length>16)past.shift();future.length=0;
 }
 function restoreLayer(from,to){
  if(!from.length||shapeDrag||occlusionDrag||pointers.size)return;
  to.push(snapshot());
- ({layers,active,occlusion}=from.pop());rebuildOcclusion();syncLayers();
+ const saved=from.pop();({layers,active,occlusion}=saved);resetFront(saved.automaticFront);rebuildOcclusion();syncLayers();
 }
 $('#undoLayer').onclick=()=>restoreLayer(past,future);
 $('#redoLayer').onclick=()=>restoreLayer(future,past);
@@ -387,7 +398,7 @@ $('#personPhoto').onchange=async e=>{
   photo.getContext('2d').drawImage(bitmap,0,0,photo.width,photo.height);
   const src=photo.toDataURL('image/jpeg',.89);photo.width=photo.height=1;
   const small=await loadImage(src);if(version!==sceneVersion)return;
-  exitEditModes();occlusion=[];past.length=future.length=0;resetLookName();
+  exitEditModes();resetFront();occlusion=[];past.length=future.length=0;resetLookName();
   personSource=src;setPerson(small);$('#tryStatus').textContent='';
   if(window.Capacitor?.isNativePlatform?.())await initialFitForPhoto(src);
  }catch{if(version===sceneVersion)fitMessage('No se pudo abrir la fotografía. Prueba otra imagen.');}
@@ -439,7 +450,7 @@ async function saveLook(copy=false){
  const transforms=layers.map(({item,bitmap,...transform})=>transform);
  const id=(!copy&&editingLook!==null)?editingLook:Date.now(),name=$('#lookName').value.trim()||'Conjunto '+new Date().toLocaleDateString('es-MX');
  try{
-  await put('outfits',{id,name,occasion:'Probador',items,composition:{photo:personSource,transforms,occlusion}});
+  await put('outfits',{id,name,occasion:'Probador',items,composition:{photo:personSource,transforms,occlusion,automaticFront}});
   editingLook=id;$('#lookName').value=name;$('#saveLook').lastChild.textContent='Guardar cambios';$('#saveCopy').hidden=false;
   await render();$('#savedLooks').value=String(id);$('#tryStatus').textContent='Conjunto guardado.';
  }catch{notify('No se pudo guardar el conjunto. Comprueba el espacio disponible.');}
@@ -458,7 +469,7 @@ async function openLook(id){
    loaded.push({item,bitmap:piece||bitmap,...transform});
   }
   if(version!==sceneVersion)return;
-  exitEditModes();occlusion=record.composition.occlusion||[];layers=loaded;active=loaded.length-1;
+  exitEditModes();resetFront(record.composition.automaticFront);occlusion=record.composition.occlusion||[];layers=loaded;active=loaded.length-1;
   personSource=photo;past.length=future.length=0;setPerson(image);editingLook=record.id;
   $('#lookName').value=lookTitle(record);$('#saveLook').lastChild.textContent='Guardar cambios';$('#saveCopy').hidden=false;$('#tryStatus').textContent='Conjunto abierto.';
  }catch{notify('No se pudo abrir el conjunto.');}
@@ -574,6 +585,8 @@ async function initialFitForPhoto(source){
    if(untouched&&!pointers.size&&!shapeDrag&&applyPlacement(layer,points))count++;
   }
   if(count){past.push(before);if(past.length>16)past.shift();future.length=0;}
+  if(!automaticFront)await detectForeground(points,true);
+  if(version!==sceneVersion)return;
   syncLayers();fitMessage(count?'Ajuste aplicado a '+count+' '+(count===1?'prenda.':'prendas.'):'Postura lista. Toca una prenda para probártela.');
  }catch(error){if(version===sceneVersion)fitMessage(error.message||'Puedes seguir con el ajuste manual.');}
 }
@@ -631,7 +644,7 @@ tc.addEventListener('pointerdown',e=>{
   remember();
   const stroke={mode:$('#occlusionMode').value,radius:Number($('#occlusionSize').value)/100,points:[{x:point.x/tc.width,y:point.y/tc.height}]};
   occlusion.push(stroke);occlusionDrag={id:e.pointerId,stroke};
-  paintOcclusion(frontMask.getContext('2d'),stroke,tc.width,tc.height);tc.setPointerCapture(e.pointerId);drawTry();return;
+  frontDirty=true;paintOcclusion(frontMask.getContext('2d'),stroke,tc.width,tc.height);tc.setPointerCapture(e.pointerId);drawTry();return;
  }
  if(shaping){
   if(shapeDrag||!layers[active]?.visible)return;
@@ -672,7 +685,7 @@ tc.addEventListener('pointermove',e=>{
   const {stroke}=occlusionDrag,p=canvasPoint(e);
   if(stroke.points.length>=400)return;
   stroke.points.push({x:Math.max(0,Math.min(1,p.x/tc.width)),y:Math.max(0,Math.min(1,p.y/tc.height))});
-  paintOcclusion(frontMask.getContext('2d'),stroke,tc.width,tc.height,stroke.points.length-2);drawTry();return;
+  frontDirty=true;paintOcclusion(frontMask.getContext('2d'),stroke,tc.width,tc.height,stroke.points.length-2);drawTry();return;
  }
  if(shapeDrag?.id===e.pointerId){
   const {layer,index}=shapeDrag;
@@ -710,5 +723,5 @@ function handleWardrobeBack(){
  return false;
 }
 const resetCropView=bindCropGestures();
-bindColors();bindCatalog();bindExport();syncLayers();
+bindColors();bindCatalog();bindExport();bindWardrobeVision();syncLayers();
 </script></body></html>
