@@ -88,6 +88,13 @@ async function main(){
   await until(()=>/ChooserActivity|ResolverActivity|IntentResolver/.test(adb('shell','dumpsys','activity','activities').toString()),'Android share sheet');
   adb('shell','input','keyevent','4');await until(()=>evaluate('!exportBusy'),'return to editor');
   assert.equal(await evaluate('layers.length'),3);console.log('PASS native share sheet, editor kept all layers.');
+  const reopened=await evaluate(`(async()=>{
+   const expected=automaticFront.data;await saveLook();const id=editingLook;
+   $('#detectFront').click();const removed=automaticFront===null;
+   await openLook(id);return {removed,restored:automaticFront?.data===expected,count:layers.length};
+  })()`);
+  assert.deepEqual(reopened,{removed:true,restored:true,count:3});
+  console.log('PASS saved look restores native foreground and all three garments.');
   const nativeCut=await evaluate(`(async()=>{
    const pose=analysis,torso=[11,12,23,24].map(i=>pose[i]);
    const px=torso.reduce((sum,p)=>sum+p.x,0)/4,py=torso.reduce((sum,p)=>sum+p.y,0)/4;
