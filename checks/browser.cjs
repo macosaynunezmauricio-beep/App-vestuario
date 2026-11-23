@@ -25,29 +25,33 @@ const server=http.createServer((req,res)=>{
  for(const [i,name] of ['Camisa naranja','Pantalón gris','Tenis negros'].entries()){
   await page.getByRole('button',{name:'Añadir '+name,exact:true}).click();await page.waitForFunction(n=>layers.length===n,i+1);
  }
- await page.click('#pairShoe');assert.equal(await page.evaluate(()=>layers[3].flipX),true);
+ await page.click('#pairShoe');assert.equal(await page.evaluate(()=>layers[active].flipX),true);
  await page.click('#undoLayer');assert.equal(await page.evaluate(()=>layers.length),3);
  await page.getByText('Ajustes de las prendas',{exact:true}).click();
- await page.selectOption('#activeLayer','0');await page.click('#shapeGarment');
+ await page.selectOption('#activeLayer','2');await page.click('#shapeGarment');
  // Real pointer input drags the left waist control inward.
- const start=await page.evaluate(()=>{tc.scrollIntoView({block:'center'});const r=tc.getBoundingClientRect(),p=meshToCanvas({x:0,y:.5},layers[0],tc.width,tc.height);return {x:r.left+p.x*r.width/tc.width,y:r.top+p.y*r.height/tc.height};});
+ const start=await page.evaluate(()=>{tc.scrollIntoView({block:'center'});const r=tc.getBoundingClientRect(),p=meshToCanvas({x:0,y:.5},layers[2],tc.width,tc.height);return {x:r.left+p.x*r.width/tc.width,y:r.top+p.y*r.height/tc.height};});
  await page.mouse.move(start.x,start.y);await page.mouse.down();await page.mouse.move(start.x+25,start.y,{steps:6});await page.mouse.up();
- const mesh=await page.evaluate(()=>layers[0].mesh);assert.ok(mesh[3].x>0);assert.equal(mesh[0].x,0);
- await page.click('#undoLayer');assert.equal(await page.evaluate(()=>layers[0].mesh),undefined);
- await page.click('#redoLayer');assert.deepEqual(await page.evaluate(()=>layers[0].mesh),mesh);
+ const mesh=await page.evaluate(()=>layers[2].mesh);assert.ok(mesh[3].x>0);assert.equal(mesh[0].x,0);
+ await page.click('#undoLayer');assert.equal(await page.evaluate(()=>layers[2].mesh),undefined);
+ await page.click('#redoLayer');assert.deepEqual(await page.evaluate(()=>layers[2].mesh),mesh);
  await page.click('#shapeGarment');await page.getByText('Manos y brazos delante de la ropa',{exact:true}).click();await page.click('#occlusionToggle');
  const mark=await page.evaluate(()=>{tc.scrollIntoView({block:'center'});const r=tc.getBoundingClientRect();return {x:r.left+r.width*.5,y:r.top+r.height*.4};});
  await page.mouse.move(mark.x,mark.y);await page.mouse.down();await page.mouse.move(mark.x+10,mark.y+10,{steps:4});await page.mouse.up();
  assert.equal(await page.evaluate(()=>occlusion.length),1);assert.equal(await page.evaluate(()=>occlusionDrag),null);
  const restored=await page.evaluate(()=>Array.from(tctx.getImageData(tc.width*.5,tc.height*.4,1,1).data));assert.deepEqual(restored,[135,185,209,255]);
- await page.click('#occlusionToggle');await page.fill('#lookName','Sábado');await page.click('#saveLook');await page.waitForFunction(()=>$('#tryStatus').textContent==='Conjunto guardado.');
- const look=await page.evaluate(async()=>{const b={format:'mi-armario',version:1,clothes:await all('clothes'),outfits:await all('outfits')};validateBackup(b);return b.outfits[0];});assert.deepEqual(look.composition.transforms[0].mesh,mesh);
+ await page.click('#occlusionToggle');
+ await page.click('#collarTools summary');await page.click('#toggleCollar');
+ assert.equal(await page.evaluate(()=>{const tex=garmentTexture(layers[2]);return tex.getContext('2d').getImageData(tex.width*.5,tex.height*.12,1,1).data[3];}),0);
+ assert.deepEqual(await page.evaluate(()=>layers.map(l=>l.item.category)),['Calzado','Inferior','Superior']);
+ await page.fill('#lookName','Sábado');await page.click('#saveLook');await page.waitForFunction(()=>$('#tryStatus').textContent==='Conjunto guardado.');
+ const look=await page.evaluate(async()=>{const b={format:'mi-armario',version:1,clothes:await all('clothes'),outfits:await all('outfits')};validateBackup(b);return b.outfits[0];});assert.deepEqual(look.composition.transforms[2].mesh,mesh);
  await context.setOffline(false);await page.reload();await page.waitForFunction(()=>!!db);await context.setOffline(true);await page.evaluate(async()=>{showTab('tryon');await render();});await page.click('#reopen summary');await page.click('#loadLook');await page.waitForFunction(()=>layers.length===3);
- assert.deepEqual(await page.evaluate(()=>layers[0].mesh),mesh);assert.equal(await page.evaluate(()=>occlusion.length),1);
+ assert.deepEqual(await page.evaluate(()=>layers[2].mesh),mesh);assert.equal(await page.evaluate(()=>occlusion.length),1);
  // Mesh rendering has opaque interior, so no transparency seams in a solid garment.
  const alpha=await page.evaluate(()=>{
   const canvas=document.createElement('canvas');canvas.width=300;canvas.height=400;
-  renderGarment(canvas.getContext('2d'),{...layers[0],x:50,y:50,size:80,rotation:0,mesh:flatGarmentMesh()},300,400);
+  renderGarment(canvas.getContext('2d'),{...layers[2],neckDepth:undefined,x:50,y:50,size:80,rotation:0,mesh:flatGarmentMesh()},300,400);
   const data=canvas.getContext('2d').getImageData(80,100,140,200).data;
   let min=255;for(let i=3;i<data.length;i+=4)min=Math.min(min,data[i]);return min;
  });assert.ok(alpha>=245,'opaque mesh interior should not show grid seams: '+alpha);

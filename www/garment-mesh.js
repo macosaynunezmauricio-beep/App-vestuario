@@ -42,15 +42,30 @@ function meshTriangle(ctx,image,src,dst){
  ctx.transform(xx,yx,xy,yy,xt,yt);ctx.drawImage(image,0,0);ctx.restore();
 }
 let garmentSurface=null;
-const reflectedGarments=new WeakMap();
+const preparedGarments=new WeakMap();
+function necklinePath(center,width,depth){
+ const half=width/2;
+ return [[center-half,-.01],[center+half,-.01],[center+half,depth*.57],
+  [center+half*.68,depth*.75],[center,depth],[center-half*.68,depth*.75],[center-half,depth*.57]];
+}
 function garmentTexture(layer){
- if(!layer.flipX)return layer.bitmap;
- if(!reflectedGarments.has(layer.bitmap)){
-  const c=document.createElement('canvas');c.width=layer.bitmap.width;c.height=layer.bitmap.height;
-  const x=c.getContext('2d');x.translate(c.width,0);x.scale(-1,1);x.drawImage(layer.bitmap,0,0);
-  reflectedGarments.set(layer.bitmap,c);
+ const bitmap=layer.bitmap;
+ if(!layer.flipX&&!layer.neckDepth)return bitmap;
+ const key=[!!layer.flipX,layer.neckCenter,layer.neckWidth,layer.neckDepth].join(',');
+ const cached=preparedGarments.get(bitmap);
+ if(cached?.key===key)return cached.image;
+ const image=document.createElement('canvas');image.width=bitmap.width;image.height=bitmap.height;
+ const ctx=image.getContext('2d');
+ if(layer.flipX){ctx.translate(image.width,0);ctx.scale(-1,1);}
+ ctx.drawImage(bitmap,0,0);
+ if(layer.neckDepth){
+  ctx.globalCompositeOperation='destination-out';ctx.beginPath();
+  necklinePath(layer.neckCenter??.5,layer.neckWidth??.24,layer.neckDepth).forEach(([x,y],i)=>{
+   if(i)ctx.lineTo(x*image.width,y*image.height);else ctx.moveTo(x*image.width,y*image.height);
+  });
+  ctx.closePath();ctx.fill();
  }
- return reflectedGarments.get(layer.bitmap);
+ preparedGarments.set(bitmap,{key,image});return image;
 }
 function renderGarment(ctx,layer,width,height){
  const texture=garmentTexture(layer);
@@ -116,7 +131,7 @@ function garmentHitTest(layer,point,width,height){
   }
   if(!uv)return false;
  }
- const m=touchMask(layer.bitmap);
- const x=Math.max(0,Math.min(m.width-1,Math.floor((layer.flipX?1-uv.x:uv.x)*m.width))),y=Math.max(0,Math.min(m.height-1,Math.floor(uv.y*m.height)));
+ const m=touchMask(garmentTexture(layer));
+ const x=Math.max(0,Math.min(m.width-1,Math.floor(uv.x*m.width))),y=Math.max(0,Math.min(m.height-1,Math.floor(uv.y*m.height)));
  return m.alpha[y*m.width+x]>=40;
 }
