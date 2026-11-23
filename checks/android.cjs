@@ -9,8 +9,10 @@ async function until(check,reason){
 async function main(){
  const app='mx.miarmario.personal';
  adb('shell','svc','wifi','disable');adb('shell','svc','data','disable');
- adb('shell','am','start','-n',app+'/.MainActivity');
- const pid=await until(()=>adb('shell','pidof',app).toString().trim(),'process');
+ adb('shell','am','start','-W','-n',app+'/.MainActivity');
+ const pid=await until(()=>{
+  try{return adb('shell','pidof',app).toString().trim();}catch(error){if(error.status===1)return false;throw error;}
+ },'process');
  adb('forward','tcp:9223','localabstract:webview_devtools_remote_'+pid);
  const target=await until(async()=>{
   try{return (await (await fetch('http://127.0.0.1:9223/json/list')).json()).find(x=>x.type==='page');}catch{return false;}
@@ -44,7 +46,8 @@ async function main(){
     dt.items.add(new File([blob],'pose.jpg',{type:'image/jpeg'}));
     const input=$('#personPhoto');input.files=dt.files;await input.onchange({target:input});
    })()`);
-   assert.equal(await evaluate('analysis?.length'),33,'native MediaPipe must locate the public test subject');
+   const pose=await evaluate("({points:analysis?.length||0,status:document.querySelector('#fitStatus').textContent})");
+   assert.equal(pose.points,33,'native MediaPipe: '+pose.status);
    if(size===360){
     for(const id of [1,2,3])await evaluate(`(async()=>{const item=catalog.clothes.find(i=>i.id===${id});await addGarment(item);})()`);
    }
@@ -74,6 +77,9 @@ async function main(){
   await until(()=>/ChooserActivity|ResolverActivity|IntentResolver/.test(adb('shell','dumpsys','activity','activities').toString()),'Android share sheet');
   adb('shell','input','keyevent','4');await until(()=>evaluate('!exportBusy'),'return to editor');
   assert.equal(await evaluate('layers.length'),3);console.log('PASS native share sheet, editor kept all layers.');
+ }catch(error){
+  try{console.error('Android app state:',await evaluate("({url:location.href,webview:navigator.userAgent,fit:document.querySelector('#fitStatus')?.textContent,export:document.querySelector('#tryStatus')?.textContent})"));}catch{}
+  throw error;
  }finally{socket.close();adb('forward','--remove','tcp:9223');}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});
