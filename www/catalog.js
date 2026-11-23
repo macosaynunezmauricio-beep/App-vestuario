@@ -1,3 +1,7 @@
+function replaceContents(element,...children){
+ element.textContent='';
+ element.append(...children);
+}
 const catalog = {clothes: [], looks: [], generation: 0, favoritesOnly: false};
 const names = new Intl.Collator('es-MX', {sensitivity:'base',numeric:true});
 function searchable(value) {
@@ -61,7 +65,7 @@ function drawCatalog(){
  const list=filteredClothes(clothes,{category:$('#filter').value,color:$('#filterColor').value,query:$('#searchClothes').value,
   favoritesOnly:catalog.favoritesOnly,order:$('#order').value});
  $('#count').textContent=(list.length!==clothes.length?list.length+' de ':'')+clothes.length+(clothes.length===1?' prenda':' prendas');
- const items=$('#items');items.replaceChildren(...list.map(item=>card(item,true)));
+ const items=$('#items');replaceContents(items,...list.map(item=>card(item,true)));
  if(!list.length)items.append(el('p','empty',clothes.length?'Ninguna prenda coincide con estos filtros.':'Tu armario está vacío. Añade tu primera prenda.'));
  $('#filterToggle').textContent=($('#filter').value||$('#filterColor').value||$('#order').value!=='recent')?'Filtros activos':'Filtros';
  $('#filterToggle').prepend(icon('filter'));
@@ -71,7 +75,7 @@ function lookTitle(record){
  const date=new Date(Number(record.id));return record.occasion+(Number.isNaN(date.getTime())?'':' · '+date.toLocaleDateString('es-MX'));
 }
 function drawLookList(){
- const list=$('#favorites');list.replaceChildren();
+ const list=$('#favorites');replaceContents(list);
  for(const record of catalog.looks){
   const node=el('article','panel'),grid=el('div','outfit');
   node.append(el('h2','',lookTitle(record)));record.items.forEach(i=>grid.append(thumb(i)));node.append(grid);
@@ -90,12 +94,12 @@ async function render(){
  if(catalog.generation!==generation)return;
  catalog.clothes=clothes.map(({original,...item})=>item).reverse();
  catalog.looks=looks.reverse().map(({id,name,occasion,items,composition})=>({id,name,occasion,items,editable:!!composition}));
- const recent=$('#recentClothes');recent.replaceChildren(...catalog.clothes.slice(0,7).map(item=>smallCard(item,'Editar',()=>editItem(item))));
+ const recent=$('#recentClothes');replaceContents(recent,...catalog.clothes.slice(0,7).map(item=>smallCard(item,'Editar',()=>editItem(item))));
  if(!clothes.length)recent.append(action('Añadir mi primera prenda','secondary',()=>openRegistration()));
- const rail=$('#garmentRail');rail.replaceChildren(...catalog.clothes.map(item=>smallCard(item,'Añadir',()=>addGarment(item))));
+ const rail=$('#garmentRail');replaceContents(rail,...catalog.clothes.map(item=>smallCard(item,'Añadir',()=>addGarment(item))));
  if(!clothes.length)rail.append(action('Añadir ropa al armario','secondary',()=>openRegistration()));
  const colors=$('#filterColor'),oldColor=colors.value;
- colors.replaceChildren(new Option('Todos',''),...Array.from(new Set(clothes.flatMap(c=>[c.color,c.secondaryColor]).filter(Boolean))).sort(names.compare).map(c=>new Option(c,c)));
+ replaceContents(colors,new Option('Todos',''),...Array.from(new Set(clothes.flatMap(c=>[c.color,c.secondaryColor]).filter(Boolean))).sort(names.compare).map(c=>new Option(c,c)));
  colors.value=oldColor;if(colors.selectedIndex<0)colors.selectedIndex=0;
  $('#lookCount').textContent=catalog.looks.length===1?'1 conjunto':catalog.looks.length+' conjuntos';
  drawCatalog();drawLookList();refreshLooks();

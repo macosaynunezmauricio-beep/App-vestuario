@@ -231,7 +231,7 @@ function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className
  }catch{notify('No se pudo guardar. Comprueba la fotografía y el espacio disponible.');}
  finally{submit.disabled=false;}
 };
-const neutrals=['Negro','Blanco','Gris','Beige','Café'];function compatible(a,b){if(a===b)return 2;if(neutrals.includes(a)||neutrals.includes(b))return 3;if((a==='Azul'&&b==='Verde')||(a==='Verde'&&b==='Azul'))return 2;return 0}$('#generate').onclick=async()=>{const clothes=await all('clothes'),occasion=$('#occasion').value,groups=['Superior','Inferior','Calzado'];if(groups.some(g=>!clothes.some(c=>c.category===g))){$('#suggestion').textContent='Registra al menos una prenda superior, una inferior y un calzado para crear conjuntos.';return}const pool=g=>clothes.filter(c=>c.category===g);let candidates=[];for(const top of pool('Superior'))for(const bottom of pool('Inferior'))for(const shoes of pool('Calzado')){const arr=[top,bottom,shoes],score=arr.reduce((n,c)=>n+(c.style===occasion?3:c.style==='Versátil'?2:0),0)+compatible(top.color,bottom.color)+compatible(bottom.color,shoes.color)+compatible(top.color,shoes.color);candidates.push({arr,score})}candidates.sort((a,b)=>b.score-a.score);const topScore=candidates[0].score;const best=candidates.filter(c=>c.score>=topScore-2);const pick=best[Math.floor(Math.random()*best.length)];current=pick.arr;const box=$('#suggestion');box.replaceChildren(el('h3','', 'Tu combinación sugerida'));const grid=el('div','grid');current.forEach(i=>grid.append(card(i)));box.append(grid);const save=el('button','','Guardar en favoritos');save.style.marginTop='12px';save.onclick=async()=>{await put('outfits',{id:Date.now(),occasion,items:current.map(c=>({...c}))});notify('Outfit guardado en favoritos.');render()};box.append(save,action('Probar combinación','secondary',()=>tryGroup(current)))};
+const neutrals=['Negro','Blanco','Gris','Beige','Café'];function compatible(a,b){if(a===b)return 2;if(neutrals.includes(a)||neutrals.includes(b))return 3;if((a==='Azul'&&b==='Verde')||(a==='Verde'&&b==='Azul'))return 2;return 0}$('#generate').onclick=async()=>{const clothes=await all('clothes'),occasion=$('#occasion').value,groups=['Superior','Inferior','Calzado'];if(groups.some(g=>!clothes.some(c=>c.category===g))){$('#suggestion').textContent='Registra al menos una prenda superior, una inferior y un calzado para crear conjuntos.';return}const pool=g=>clothes.filter(c=>c.category===g);let candidates=[];for(const top of pool('Superior'))for(const bottom of pool('Inferior'))for(const shoes of pool('Calzado')){const arr=[top,bottom,shoes],score=arr.reduce((n,c)=>n+(c.style===occasion?3:c.style==='Versátil'?2:0),0)+compatible(top.color,bottom.color)+compatible(bottom.color,shoes.color)+compatible(top.color,shoes.color);candidates.push({arr,score})}candidates.sort((a,b)=>b.score-a.score);const topScore=candidates[0].score;const best=candidates.filter(c=>c.score>=topScore-2);const pick=best[Math.floor(Math.random()*best.length)];current=pick.arr;const box=$('#suggestion');replaceContents(box,el('h3','', 'Tu combinación sugerida'));const grid=el('div','grid');current.forEach(i=>grid.append(card(i)));box.append(grid);const save=el('button','','Guardar en favoritos');save.style.marginTop='12px';save.onclick=async()=>{await put('outfits',{id:Date.now(),occasion,items:current.map(c=>({...c}))});notify('Outfit guardado en favoritos.');render()};box.append(save,action('Probar combinación','secondary',()=>tryGroup(current)))};
 
 // Probador fotográfico local: superposición ajustable, no modelo generativo.
 let personImage=null, personSource=null, layers=[], active=-1;
@@ -289,14 +289,14 @@ function syncLayers(){
  $('#tryDownload').disabled=$('#tryShare').disabled=!canExport;
  $('#tryShare').hidden=!window.Capacitor?.isNativePlatform?.();
  const chips=$('#layerChips');
- chips.replaceChildren(...layers.map((layer,i)=>{
+ replaceContents(chips,...layers.map((layer,i)=>{
   const chip=action(layer.item.name+(layer.visible?'':' · oculta'),'chip',()=>{
    if(!pointers.size&&!shapeDrag&&!occlusionDrag){active=i;syncLayers();}
   });
   chip.setAttribute('aria-pressed',String(i===active));return chip;
  }));
  const select=$('#activeLayer');
- select.replaceChildren(...layers.map((layer,i)=>new Option(layer.item.name+(layer.visible?'':' (oculta)'),i)));
+ replaceContents(select,...layers.map((layer,i)=>new Option(layer.item.name+(layer.visible?'':' (oculta)'),i)));
  select.selectedIndex=active;
  const layer=layers[active];
  $('#garmentLight').disabled=$('#garmentOpacity').disabled=!layer;
@@ -386,6 +386,13 @@ async function addGarment(item){
   if(personSource===analyzedPhoto&&analysis?.length)applyPlacement(layer,analysis);
   syncLayers();
   if(!personImage)fitMessage('Elige tu foto para ver el conjunto sobre tu cuerpo.');
+  else if(window.Capacitor?.isNativePlatform?.()&&analyzedPhoto!==personSource){
+   const source=personSource,key=geometryKey(layer);
+   detectPose(source).then(points=>{
+    if(version!==sceneVersion||!layers.includes(layer)||geometryKey(layer)!==key||pointers.size||shapeDrag)return;
+    if(applyPlacement(layer,points))syncLayers();
+   }).catch(()=>{});
+  }
  }catch{fitMessage('No se pudo abrir esa prenda.');}
  finally{adding=false;}
 }
@@ -396,7 +403,7 @@ async function tryGroup(items){
 }
 function refreshLooks(){
  const picker=$('#savedLooks'),before=picker.value,records=catalog.looks.filter(r=>r.editable);
- picker.replaceChildren(...records.map(r=>new Option(lookTitle(r),String(r.id))));
+ replaceContents(picker,...records.map(r=>new Option(lookTitle(r),String(r.id))));
  if(records.some(r=>String(r.id)===before))picker.value=before;
  $('#loadLook').disabled=!records.length;
 }

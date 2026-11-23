@@ -40,8 +40,8 @@ function garmentColors({data}){
 }
 function bindColors(){
  const options=Object.keys(swatches).map(c=>new Option(c,c));
- $('#color').replaceChildren(...options,new Option('Otro','Otro'),new Option('Personalizado','custom'));
- $('#secondaryColor').replaceChildren(new Option('Sin color secundario',''),...Object.keys(swatches).map(c=>new Option(c,c)));
+ replaceContents($('#color'),...options,new Option('Otro','Otro'),new Option('Personalizado','custom'));
+ replaceContents($('#secondaryColor'),new Option('Sin color secundario',''),...Object.keys(swatches).map(c=>new Option(c,c)));
  $('#color').onchange=()=>{$('#customWrap').hidden=$('#color').value!=='custom';};
 }
 function setDetectedColors(image){
