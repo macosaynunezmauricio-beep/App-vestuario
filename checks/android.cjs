@@ -50,6 +50,7 @@ async function main(){
    })()`);
    const pose=await evaluate("({points:analysis?.length||0,status:document.querySelector('#fitStatus').textContent})");
    assert.equal(pose.points,33,'native MediaPipe: '+pose.status);
+   assert.ok(await evaluate("poseOutlines.get(analysis)?.pixels.includes(String.fromCharCode(1))"),'native silhouette');
    if(size===360){
     for(const id of [1,2,3])await evaluate(`(async()=>{const item=catalog.clothes.find(i=>i.id===${id});await addGarment(item);})()`);
    }

@@ -204,3 +204,48 @@ function torsoLight(photo,points){
  const light=Math.max(-.22,Math.min(.22,(right-left)/Math.max(60,(left+right)/2)*.65));
  portraitLight.set(photo,light);return light;
 }
+
+const poseOutlines=new WeakMap();
+function fitSilhouette(mesh,outline,points,category,layer,width,height,mask){
+ if(!outline||mesh.length!==25)return mesh;
+ const pants=category==='Inferior';
+ if(!pants&&!['Superior','Exterior'].includes(category))return mesh;
+ const result=mesh.map(p=>({...p}));
+ const sides=pants?[[23,25,27],[24,26,28]]:[[11,23],[12,24]];
+ const paths=sides.map(ids=>ids.map(i=>points[i])).sort((a,b)=>a[0].x-b[0].x);
+ const {w,h,pixels}=outline,clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+ for(let row=0;row<5;row++){
+  if(!pants&&row<2)continue; // Upper arms and shoulders can form one connected silhouette.
+  const v=clamp(row/4,.065,.94),mrow=Math.round(v*(mask.height-1))*mask.width;
+  for(let side=0;side<2;side++){
+   const sign=side?1:-1,chain=paths[side];
+   let col=side?mask.width-1:0;
+   while(col>=0&&col<mask.width&&mask.alpha[mrow+col]<150)col-=sign;
+   if(col<0||col>=mask.width)continue;
+   const u=col/(mask.width-1);
+   if((side?u:1-u)<.60)continue;
+   const edge=meshToCanvas(meshSample(mesh,u,v),layer,width,height);
+   const y=edge.y/height;
+   if(chain.some(p=>!p||p.visibility<.55))continue;
+   const from=pants&&y>chain[1].y?1:0,a=chain[from],b=chain[from+1];
+   if(b.y<=a.y+.02)continue;
+   const t=clamp((y-a.y)/(b.y-a.y),0,1);
+   const jointX=a.x+(b.x-a.x)*t;
+   const iy=Math.round(y*(h-1)),ix=Math.round(jointX*(w-1));
+   if(iy<0||iy>=h||ix<0||ix>=w||pixels.charCodeAt(iy*w+ix)!==1)continue;
+   let boundary=ix;
+   while(boundary+sign>=0&&boundary+sign<w&&pixels.charCodeAt(iy*w+boundary+sign)===1)boundary+=sign;
+   if(boundary===0||boundary===w-1)continue;
+   const outer=boundary*width/(w-1),gap=sign*(outer-edge.x);
+   const frame=garmentFrame(layer,width,height);
+   if(gap<=0||gap>frame.w*.26)continue;
+   // Extend only outboard vertices. Preserve seams and retain the photographed ease.
+   const amount=Math.min(.20,(gap+width/w*.5)/frame.w);
+   for(let i=0;i<5;i++){
+    const influence=clamp((i/4-.5)*sign/Math.max(.15,Math.abs(u-.5)),0,1.45);
+    result[row*5+i].x+=sign*amount*influence;
+   }
+  }
+ }
+ return validGarmentMesh(result)?result:mesh;
+}

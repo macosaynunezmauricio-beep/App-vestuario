@@ -403,7 +403,10 @@ async function addGarment(item){
   remember();const layer={item,bitmap,...initialLayer(item.category)};
   if(item.category==='Calzado'){
    const pair=shoePieces(bitmap);
-   if(pair){layer.shoeHalf=0;layer.bitmap=pair[0];}
+   if(pair){
+    const other=layers.find(l=>l.visible&&l.item.id===item.id&&l.shoeHalf!==undefined);
+    layer.shoeHalf=other?1-other.shoeHalf:0;layer.bitmap=pair[layer.shoeHalf];
+   }
   }
   active=insertGarment(layers,layer);
   if(personSource===analyzedPhoto&&analysis?.length)applyPlacement(layer,analysis);
@@ -521,6 +524,13 @@ async function detectPose(source){
  if(!bridge)throw Error('El ajuste automático está disponible en Android. Puedes marcar dos esquinas.');
  const task=bridge.detect({image:source.split(',')[1]}).then(result=>{
   const points=Array.isArray(result.points)?result.points:[];
+  if(result.outline&&points.length){
+   const {w,h,data}=result.outline;
+   if(Number.isInteger(w)&&Number.isInteger(h)&&w>0&&h>0&&w<=160&&h<=160){
+    const pixels=atob(data);
+    if(pixels.length===w*h)poseOutlines.set(points,{w,h,pixels});
+   }
+  }
   if(source===personSource){analyzedPhoto=source;analysis=points;}
   return points;
  });
@@ -534,12 +544,18 @@ function applyPlacement(layer,points){
  if(index>1)return false;
  const side=layer.foot??(index>0?1:0);
  const group=layer.item.category==='Inferior'&&/\b(shorts?|bermudas?|faldas?)\b/i.test(layer.item.name)?'Corto':layer.item.category;
- const fit=bodyPlacement(points,group,layer.bitmap.width/layer.bitmap.height,tc.width,tc.height,side);
+ const pair=group==='Calzado'&&layer.shoeHalf===undefined?shoePieces(layer.bitmap):null;
+ const bitmap=pair?pair[side]:layer.bitmap;
+ const fit=bodyPlacement(points,group,bitmap.width/bitmap.height,tc.width,tc.height,side);
  if(!fit)return false;
  Object.assign(layer,fit);
+ if(group==='Calzado')layer.foot=side;
+ if(pair)Object.assign(layer,{bitmap,shoeHalf:side,flipX:false});
  const mesh=poseMesh(points,group,layer,tc.width,tc.height);
  if(mesh){
-  layer.mesh=articulatedMesh(mesh,points,group,layer,tc.width,tc.height,touchMask(layer.bitmap));
+  const mask=touchMask(layer.bitmap);
+  const articulated=articulatedMesh(mesh,points,group,layer,tc.width,tc.height,mask);
+  layer.mesh=fitSilhouette(articulated,poseOutlines.get(points),points,group,layer,tc.width,tc.height,mask);
   if(group==='Superior'||group==='Exterior')layer.sceneShade=torsoLight(personImage,points);
  }
  return true;
