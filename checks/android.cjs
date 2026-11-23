@@ -65,8 +65,14 @@ async function main(){
     await evaluate("$('#tryDownload').click()");
     await until(()=>evaluate("!exportBusy && $('#tryStatus').textContent.includes('Imágenes')"),'gallery save');
     const rows=adb('shell','content','query','--uri','content://media/external/images/media','--projection','_id:_display_name').toString();
-    const ids=[...rows.matchAll(/_id=(\d+), _display_name=Mi-Armario-/g)].map(m=>Number(m[1]));assert.ok(ids.length);
-    const bytes=adb('exec-out','content','read','--uri','content://media/external/images/media/'+Math.max(...ids));
+    const images=[...rows.matchAll(/_id=(\d+), _display_name=(Mi-Armario-[a-f0-9-]+\.png)/g)].map(m=>({id:Number(m[1]),name:m[2]}));
+    assert.ok(images.length,'PNG row in MediaStore');const latest=images.sort((a,b)=>b.id-a.id)[0];
+    // The Android 11 "content read" shell tool can return permission diagnostics on stdout
+    // with a zero exit status. Read the published file via adb's file-transfer service.
+    const target=require('node:path').join(require('node:os').tmpdir(),'gallery-'+latest.name);
+    adb('pull','/sdcard/Pictures/Mi Armario/'+latest.name,target);
+    const bytes=fs.readFileSync(target);fs.unlinkSync(target);
+    assert.deepEqual(bytes.subarray(0,8),Buffer.from([137,80,78,71,13,10,26,10]),'gallery PNG signature');
     assert.equal(bytes.readUInt32BE(16),expected.w);assert.equal(bytes.readUInt32BE(20),expected.h);
     assert.equal(createHash('sha256').update(bytes).digest('hex'),expected.hash,'gallery pixels and PNG bytes');
     assert.equal(adb('shell','pidof',app).toString().trim(),pid);
