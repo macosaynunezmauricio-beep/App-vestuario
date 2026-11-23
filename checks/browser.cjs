@@ -13,6 +13,21 @@ const server=http.createServer((req,res)=>{
  const context=await browser.newContext({viewport:{width:412,height:915},reducedMotion:'reduce',acceptDownloads:true});const page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>!!db);
  await context.setOffline(true);
+ // The same accessible picker lives in the empty stage and then beside the photo.
+ for(const width of [320,412,768]){
+  await page.setViewportSize({width,height:800});
+  for(const tab of ['home','closet','style','tryon']){
+   await page.locator('nav [data-tab="'+tab+'"]').click();
+   assert.equal(await page.locator('nav [aria-current="page"]').getAttribute('data-tab'),tab);
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'overflow in '+tab+' at '+width);
+  }
+  assert.equal(await page.locator('#stageEmpty #personPhoto').isVisible(),true);
+  assert.equal(await page.locator('#stageActions').isVisible(),false);
+ }
+ await page.setViewportSize({width:412,height:915});
+ fs.mkdirSync('test-results',{recursive:true});
+ await page.screenshot({path:'test-results/probador-vacio.png'});
+ await page.click('#addClothes');await page.screenshot({path:'test-results/registro.png'});
  await page.evaluate(async()=>{
   const c=document.createElement('canvas');c.width=200;c.height=300;const x=c.getContext('2d');
   const items=[];
@@ -22,6 +37,8 @@ const server=http.createServer((req,res)=>{
   }
   c.width=600;c.height=900;x.fillStyle='#87b9d1';x.fillRect(0,0,600,900);personSource=c.toDataURL();setPerson(await loadImage(personSource));await render();showTab('tryon');
  });
+ assert.equal(await page.locator('#stageHeading #personPhoto').isVisible(),true);
+ assert.equal(await page.locator('#stageActions').isVisible(),true);
  for(const [i,name] of ['Camisa naranja','Pantalón gris','Tenis negros'].entries()){
   await page.getByRole('button',{name:'Añadir '+name,exact:true}).click();await page.waitForFunction(n=>layers.length===n,i+1);
  }
@@ -56,7 +73,6 @@ const server=http.createServer((req,res)=>{
   let min=255;for(let i=3;i<data.length;i+=4)min=Math.min(min,data[i]);return min;
  });assert.ok(alpha>=245,'opaque mesh interior should not show grid seams: '+alpha);
  assert.equal(await page.locator('#realisticTry').count(),0);assert.equal(await page.locator('#serverUrl').count(),0);
- fs.mkdirSync('test-results',{recursive:true});
  for(let i=0;i<3;i++){
   const waiting=page.waitForEvent('download');await page.click('#tryDownload');const download=await waiting;
   const bytes=fs.readFileSync(await download.path());assert.equal(bytes.subarray(1,4).toString(),'PNG');assert.equal(bytes.readUInt32BE(16),600);
@@ -83,7 +99,7 @@ const server=http.createServer((req,res)=>{
  await page.waitForFunction(()=>catalog.clothes.some(i=>i.name==='Pantalón de prueba'));
  const added=await page.evaluate(async()=>{const i=(await all('clothes')).find(i=>i.name==='Pantalón de prueba');return {color:i.color,secondary:i.secondaryColor,thumb:!!i.thumb,original:!!i.original};});
  assert.deepEqual(added,{color:'#52354a',secondary:'Gris',thumb:true,original:true});
- await page.click('#filterToggle');await page.click('#clearFilters');await page.getByRole('article').filter({hasText:'Pantalón de prueba'}).getByRole('button',{name:'Editar',exact:true}).click();
+ await page.click('#filterToggle');await page.click('#clearFilters');const article=page.getByRole('article').filter({hasText:'Pantalón de prueba'});await article.locator('summary').click();await article.getByRole('button',{name:'Editar',exact:true}).click();
  await page.waitForFunction(()=>$('#name').value==='Pantalón de prueba');assert.equal(await page.inputValue('#customColor'),'#52354a');
  const hole=await page.evaluate(()=>{
   const bitmap=document.createElement('canvas');bitmap.width=bitmap.height=100;const ctx=bitmap.getContext('2d');ctx.fillRect(0,0,100,100);ctx.clearRect(40,40,20,20);
