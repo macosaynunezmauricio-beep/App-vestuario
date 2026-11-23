@@ -3,6 +3,7 @@ package mx.miarmario.personal;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
+import android.util.Log;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -16,6 +17,7 @@ import com.google.mediapipe.tasks.core.BaseOptions;
 import com.google.mediapipe.tasks.vision.imagesegmenter.ImageSegmenter;
 import com.google.mediapipe.tasks.vision.interactivesegmenter.InteractiveSegmenter;
 import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 
 @CapacitorPlugin(name = "WardrobeVision")
 public class WardrobeVision extends Plugin {
@@ -23,20 +25,24 @@ public class WardrobeVision extends Plugin {
         return BaseOptions.builder().setModelAssetPath(asset).build();
     }
 
-    private JSObject pack(MPImage mask, boolean confidence) {
+    private JSObject packConfidence(MPImage mask) {
         int width = mask.getWidth(), height = mask.getHeight();
         float scale = Math.min(1f, 384f / Math.max(width, height));
         int w = Math.max(1, Math.round(width * scale)), h = Math.max(1, Math.round(height * scale));
         var bytes = ByteBufferExtractor.extract(mask).order(ByteOrder.nativeOrder());
-        var floats = confidence ? bytes.asFloatBuffer() : null;
+        var floats = bytes.asFloatBuffer();
         byte[] samples = new byte[w * h];
         for (int y = 0; y < h; y++) {
             int row = (int)((y + .5f) * height / h) * width;
             for (int x = 0; x < w; x++) {
                 int index = row + (int)((x + .5f) * width / w);
-                samples[y * w + x] = confidence ? (byte)Math.round(255 * floats.get(index)) : bytes.get(index);
+                samples[y * w + x] = (byte)Math.round(255 * floats.get(index));
             }
         }
+        return samplesResult(w, h, samples);
+    }
+
+    private JSObject samplesResult(int w, int h, byte[] samples) {
         JSObject result = new JSObject();
         result.put("w", w);
         result.put("h", h);
@@ -51,7 +57,7 @@ public class WardrobeVision extends Plugin {
             var roi = InteractiveSegmenter.RegionOfInterest.create(NormalizedKeypoint.create(x, y));
             var masks = segmenter.segment(image, roi).confidenceMasks().get();
             try {
-                return pack(masks.get(masks.size() - 1), true);
+                return packConfidence(masks.get(masks.size() - 1));
             } finally {
                 masks.forEach(MPImage::close);
             }
@@ -61,13 +67,33 @@ public class WardrobeVision extends Plugin {
     private JSObject classify(MPImage image) {
         var options = ImageSegmenter.ImageSegmenterOptions.builder()
             .setBaseOptions(model("selfie_multiclass.tflite"))
-            .setOutputConfidenceMasks(false).setOutputCategoryMask(true).build();
+            .setOutputConfidenceMasks(true).setOutputCategoryMask(false).build();
+        float scale = Math.min(1f, 384f / Math.max(image.getWidth(), image.getHeight()));
+        int width = Math.max(1, Math.round(image.getWidth() * scale));
+        int height = Math.max(1, Math.round(image.getHeight() * scale));
+        var output = ImageSegmenter.SegmentationOptions.builder()
+            .setOutputWidth(width).setOutputHeight(height).build();
         try (var segmenter = ImageSegmenter.createFromOptions(getContext(), options)) {
-            MPImage mask = segmenter.segment(image).categoryMask().get();
+            var masks = segmenter.segment(image, output).confidenceMasks().get();
             try {
-                return pack(mask, false);
+                if (masks.size() != 6) throw new IllegalStateException("Se esperaban seis clases.");
+                FloatBuffer[] channels = new FloatBuffer[masks.size()];
+                for (int i = 0; i < channels.length; i++) {
+                    channels[i] = ByteBufferExtractor.extract(masks.get(i)).order(ByteOrder.nativeOrder()).asFloatBuffer();
+                }
+                byte[] classes = new byte[width * height];
+                for (int i = 0; i < classes.length; i++) {
+                    int best = 0;
+                    float max = channels[0].get(i);
+                    for (int c = 1; c < channels.length; c++) {
+                        float value = channels[c].get(i);
+                        if (value > max) { best = c; max = value; }
+                    }
+                    classes[i] = (byte)best;
+                }
+                return samplesResult(width, height, classes);
             } finally {
-                mask.close();
+                masks.forEach(MPImage::close);
             }
         }
     }
@@ -104,6 +130,7 @@ public class WardrobeVision extends Plugin {
                 image.close();
             }
         } catch (Exception e) {
+            Log.e("WardrobeVision", "Fallo en modo " + mode, e);
             call.reject("No se pudo analizar esta foto en el dispositivo.", e);
         } finally {
             if (bitmap != null) bitmap.recycle();

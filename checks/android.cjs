@@ -105,6 +105,7 @@ async function main(){
   assert.ok(nativeCut.kept>.001&&nativeCut.kept<.70,JSON.stringify(nativeCut));assert.equal(nativeCut.restored,255);
   assert.equal(nativeCut.png,'image/png');console.log('PASS interactive garment, clothing classes, undo / redo and transparent PNG',nativeCut.kept);
  }catch(error){
+  try{console.error(adb('logcat','-d','-s','WardrobeVision:E').toString().slice(-6000));}catch{}
   try{console.error('Android app state:',await evaluate("({url:location.href,webview:navigator.userAgent,fit:document.querySelector('#fitStatus')?.textContent,export:document.querySelector('#tryStatus')?.textContent})"));}catch{}
   throw error;
  }finally{socket.close();adb('forward','--remove','tcp:9223');}
