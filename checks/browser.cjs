@@ -106,6 +106,25 @@ const server=http.createServer((req,res)=>{
   const l={bitmap,size:100,rotation:0,x:50,y:50,mesh:flatGarmentMesh()};
   return [garmentHitTest(l,{x:50,y:50},100,100),garmentHitTest(l,{x:20,y:50},100,100)];
  });assert.deepEqual(hole,[false,true]);
+ // A paired product image keeps distinct shoe graphics after saving and reopening.
+ const pairTest=await page.evaluate(async()=>{
+  layers=[];active=-1;showTab('tryon');
+  const c=document.createElement('canvas');c.width=160;c.height=100;
+  const x=c.getContext('2d');x.fillStyle='#b01d1d';x.fillRect(8,8,55,86);
+  x.fillStyle='#336abb';x.fillRect(96,8,55,86);
+  await addGarment({id:202,name:'Tenis de par',category:'Calzado',color:'Rojo',style:'Casual',image:c.toDataURL()});
+  $('#pairShoe').click();$('#lookName').value='Par completo';await saveLook(true);
+  const id=editingLook;layers=[];await openLook(id);
+  const parts=layers.map(l=>{
+   const sample=document.createElement('canvas');sample.width=sample.height=1;
+   const ctx=sample.getContext('2d');ctx.drawImage(l.bitmap,0,0,1,1);
+   return [l.shoeHalf,Array.from(ctx.getImageData(0,0,1,1).data).slice(0,3)];
+  });
+  const b={format:'mi-armario',version:1,clothes:await all('clothes'),outfits:await all('outfits')};validateBackup(b);
+  return parts;
+ });
+ assert.equal(pairTest.length,2);assert.deepEqual(pairTest.map(part=>part[0]),[0,1]);
+ assert.ok(pairTest[0][1][0]>pairTest[0][1][2]&&pairTest[1][1][2]>pairTest[1][1][0]);
  assert.deepEqual(errors,[]);console.log('PASS offline: wardrobe, named looks, 3 layers, two shoes, mesh/undo/redo, masks, gallery, repeated PNG.');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>server.close());

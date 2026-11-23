@@ -30,6 +30,8 @@ function validateBackup(backup) {
     (t.opacity===undefined||(Number.isFinite(t.opacity)&&t.opacity>=.2&&t.opacity<=1)) &&
     (t.brightness===undefined||(Number.isFinite(t.brightness)&&t.brightness>=.7&&t.brightness<=1.3)) &&
     (t.flipX===undefined||typeof t.flipX==='boolean') &&
+    (t.sceneShade===undefined||(Number.isFinite(t.sceneShade)&&Math.abs(t.sceneShade)<=.22)) &&
+    (t.shoeHalf===undefined||t.shoeHalf===0||t.shoeHalf===1) &&
     (t.foot===undefined||t.foot===0||t.foot===1) &&
     [['neckCenter',.25,.75],['neckWidth',.08,.48],['neckDepth',.03,.45]].every(([k,min,max])=>t[k]===undefined||(Number.isFinite(t[k])&&t[k]>=min&&t[k]<=max)) &&
     (t.mesh===undefined||validGarmentMesh(t.mesh)));

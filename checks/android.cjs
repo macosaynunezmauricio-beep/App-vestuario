@@ -34,7 +34,9 @@ async function main(){
   await evaluate(`(async()=>{
    for(const [id,name,category,color] of [[1,'Camisa naranja','Superior','#ef7615'],[2,'Pantalón gris','Inferior','#808080'],[3,'Tenis negros','Calzado','#282828']]){
     const c=document.createElement('canvas');c.width=140;c.height=category==='Inferior'?300:160;
-    const ctx=c.getContext('2d');ctx.fillStyle=color;ctx.fillRect(4,4,c.width-8,c.height-8);
+    const ctx=c.getContext('2d');ctx.fillStyle=color;if(category==='Superior'){ctx.fillRect(31,10,78,142);ctx.fillRect(4,18,132,45);}
+    else if(category==='Inferior'){ctx.fillRect(18,4,104,91);ctx.fillRect(10,90,53,203);ctx.fillRect(76,90,53,203);}
+    else{ctx.fillRect(6,18,51,130);ctx.fillRect(81,18,51,130);}
     await put('clothes',{id,name,category,color,style:'Casual',image:c.toDataURL()});
    }await render();showTab('tryon');
   })()`);
@@ -52,7 +54,8 @@ async function main(){
     for(const id of [1,2,3])await evaluate(`(async()=>{const item=catalog.clothes.find(i=>i.id===${id});await addGarment(item);})()`);
    }
    assert.equal(await evaluate('layers.length'),3);
-   assert.ok(await evaluate("layers.find(l=>l.item.category==='Superior').mesh?.length===9"));
+   assert.ok(await evaluate("layers.find(l=>l.item.category==='Superior').mesh?.length===25"));
+   assert.equal(await evaluate("layers.find(l=>l.item.category==='Calzado').shoeHalf"),0);
    const expected=await evaluate(`(async()=>{
     const png=await compositePng(),img=await readPhoto(png),c=document.createElement('canvas');c.width=img.width;c.height=img.height;
     const ctx=c.getContext('2d');ctx.drawImage(img,0,0);const p=ctx.getImageData(0,0,c.width,c.height).data;let orange=0,blue=0;
