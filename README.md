@@ -6,21 +6,11 @@ Actualización incremental de la app web empaquetada con Capacitor. Conserva
 solo tiene la imagen procesada se puede editar hasta el límite de los píxeles
 conservados. Las altas nuevas guardan el archivo original junto al PNG editado.
 
-## Uso
+## Uso y versión de prueba
 
-- En **Añadir prenda**, elige Cámara o Galería. Prueba **Quitar fondo** si la prenda está centrada sobre un fondo liso. En **Editar recorte**, borra el
-  fondo y recupera zonas con el pincel. Ajusta el tamaño y suavizado, aplica el
-  recorte, revisa los campos y guarda.
-- En **Armario** puedes buscar, filtrar y volver a editar los datos y la imagen.
-- En **Inicio** están los outfits favoritos y la exportación/importación JSON.
-  La importación combina los almacenes en una transacción y respeta los
-  registros con identificadores que ya existen. El JSON incluye fotografías
-  personales. Guárdalo en un lugar privado.
-- En Android, **Descargar imagen** del probador manual abre el selector del sistema para guardar el PNG.
-- El editor manual, el armario, las combinaciones y el probador manual se
-  ejecutan localmente. La sugerencia opcional de categoría con CLIP necesita
-  conexión para cargar dependencias. El envío opcional al servidor CatVTON
-  solicita confirmación para las dos fotos.
+El probador permite añadir prendas por miniatura, ajustarlas con la postura local, retocar su forma, guardar conjuntos por nombre y exportar o compartir el PNG. Inicio reúne el acceso al probador, las prendas recientes, los conjuntos y el respaldo. El APK incluye todos los recursos de ejecución.
+
+[Instalación, controles, pruebas y limitaciones del estudio móvil](docs/estudio-movil.md)
 
 ## Auditoría y diseño de segmentación
 
@@ -56,39 +46,8 @@ fotos de camisas puestas, mangas, prendas superpuestas y fondos variados.
 Comparar ONNX FP32 e INT8 en el teléfono antes de decidir el formato final,
 midiendo latencia en frío y caliente, RAM máxima y tamaño del APK.
 
-## Compilación
+## Compilación y verificación
 
-GitHub Actions ejecuta `npm ci` y `npm test`, prepara Java 21 y Android
-SDK 35, genera el proyecto Android de Capacitor 7 y compila `assembleDebug`.
-El workflow se ejecuta en PR hacia `main`, en push a `main` o manualmente.
-El disparador manual requiere que el workflow esté disponible en la rama
-predeterminada. Descarga `mi-armario-debug-apk` desde el resumen de la ejecución.
+El flujo de GitHub Actions instala dependencias desde el lockfile, ejecuta Node y Chromium, prepara Capacitor con Java 21 y Android SDK 35, integra los plugins nativos y comprueba el hash del modelo de pose. Publica el APK de depuración y lo instala en un emulador para probar el guardado de imágenes. El resultado exacto y los artefactos están en la ejecución correspondiente al commit.
 
-Para compilar localmente con Node 22, Java 21 y Android SDK 35:
-
-```sh
-npm ci
-npm test
-npx cap add android
-cp native-android/*.java android/app/src/main/java/mx/miarmario/personal/
-npx cap sync android
-cd android
-./gradlew assembleDebug --no-daemon --stacktrace
-```
-
-El APK se genera en `android/app/build/outputs/apk/debug/app-debug.apk`.
-Para actualizar sobre un APK existente se requiere el mismo certificado de
-firma. Los runners desechables pueden generar una clave debug distinta. Usa
-la clave original para probar una actualización en sitio y conserva una copia
-antes de instalar.
-
-## Estado de validación
-
-- Cinco pruebas Node cubren sintaxis, validación de respaldos, color blanco,
-  operaciones alfa del pincel e importación con IndexedDB simulado.
-- Dependencias resueltas con lockfile y generación/sincronización de Capacitor
-  7.6.10 comprobada.
-- La compilación local se detuvo durante la descarga de Gradle 8.11.1 por falta
-  de acceso de red. El entorno tampoco dejó iniciar Chromium para la prueba
-  integral. Quedan por comprobar instalación, cámara, exportación en WebView y
-  el flujo completo con fotografías de prendas sobre personas.
+[Configuración reproducible de la compilación](.github/workflows/android-debug.yml)
