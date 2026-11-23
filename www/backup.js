@@ -21,6 +21,7 @@ function validateBackup(backup) {
   const entry=outfit.composition;
   return entry && validImage(entry.photo) && Array.isArray(entry.transforms) &&
    entry.transforms.length===outfit.items.length && entry.transforms.length<=12 &&
+   (entry.automaticFront==null||validVisionMask(entry.automaticFront)) &&
    (entry.occlusion===undefined||validOcclusion(entry.occlusion)) &&
    entry.transforms.every(t=>t && typeof t.visible==='boolean' &&
     ['x','y','size','rotation'].every(key=>Number.isFinite(t[key])) &&

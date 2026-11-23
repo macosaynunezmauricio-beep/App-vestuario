@@ -6,13 +6,7 @@ function compositePng(){
  ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
  ctx.drawImage(personImage,0,0,canvas.width,canvas.height);
  for(const layer of layers)if(layer.visible)renderGarment(ctx,layer,canvas.width,canvas.height);
- if(occlusion.length){
-  const front=frontPhoto.getContext('2d');
-  front.clearRect(0,0,canvas.width,canvas.height);
-  front.drawImage(personImage,0,0,canvas.width,canvas.height);
-  front.globalCompositeOperation='destination-in';front.drawImage(frontMask,0,0);
-  front.globalCompositeOperation='source-over';ctx.drawImage(frontPhoto,0,0);
- }
+ drawOcclusion(ctx);
  return new Promise((resolve,reject)=>canvas.toBlob(blob=>{
   canvas.width=canvas.height=1;
   if(blob?.size)resolve(blob);else reject(Error('No se pudo preparar el PNG.'));
