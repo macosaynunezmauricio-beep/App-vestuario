@@ -11,3 +11,13 @@ function layerHit(layer, point, width, height) {
  return Math.abs(dx*Math.cos(angle)+dy*Math.sin(angle))<=size/2 &&
   Math.abs(dy*Math.cos(angle)-dx*Math.sin(angle))<=size*layer.bitmap.height/layer.bitmap.width*(layer.stretch??1)/2;
 }
+
+// Canvas paints from back to front. Leave existing (including manually reordered) layers in place.
+function insertGarment(layers,layer){
+ const order={Calzado:0,Inferior:1,Superior:2,Vestido:2,Exterior:3,Accesorio:4};
+ const rank=item=>order[item.category]??4;
+ const higher=layers.findIndex(existing=>rank(existing.item)>rank(layer.item));
+ const index=higher<0?layers.length:higher;
+ layers.splice(index,0,layer);
+ return index;
+}

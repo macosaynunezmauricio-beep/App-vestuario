@@ -92,3 +92,32 @@ function simpleBackdropMask({width, height, data}, careful=false) {
  for(let pixel=0;pixel<size;pixel++)background[pixel]=seen[pixel]===2?0:1;
  return background;
 }
+
+// Follow smooth neutral cast shadows out from an existing bright backdrop.
+// Require a dark textile sample and retain strong gradients at the true fabric edge.
+function clearBackdropShadow(image,background){
+ const {width,height,data}=image,size=width*height;
+ let cloth=0,dark=0,backgroundSamples=0,bright=0;
+ const light=i=>(data[4*i]+2*data[4*i+1]+data[4*i+2])/4;
+ for(let i=0;i<size;i+=3){
+  if(background[i]){backgroundSamples++;if(light(i)>202)bright++;}
+  else{cloth++;if(light(i)<135)dark++;}
+ }
+ if(!cloth||dark/cloth<.57||!backgroundSamples||bright/backgroundSamples<.75)return 0;
+ const queue=new Uint32Array(size);let tail=0,added=0;
+ function expand(from,to){
+  if(background[to])return;
+  const lum=light(to),j=to*4,r=data[j],g=data[j+1],b=data[j+2];
+  if(lum<116||Math.max(r,g,b)-Math.min(r,g,b)>32||Math.abs(light(from)-lum)>13)return;
+  background[to]=1;queue[tail++]=to;added++;
+ }
+ function neighbors(i){
+  if(i%width)expand(i,i-1);
+  if(i%width<width-1)expand(i,i+1);
+  if(i>=width)expand(i,i-width);
+  if(i<size-width)expand(i,i+width);
+ }
+ for(let i=0;i<size;i++)if(background[i]&&light(i)>154)neighbors(i);
+ for(let head=0;head<tail;head++)neighbors(queue[head]);
+ return added;
+}

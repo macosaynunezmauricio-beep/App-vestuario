@@ -30,3 +30,15 @@ test('recorte delicado conserva dos zapatos blancos separados y elimina el fondo
  const mask=c.simpleBackdropMask({width,height,data},true);
  assert.equal(mask[0],1);assert.equal(mask[15*width+10],0);assert.equal(mask[15*width+34],0);assert.equal(mask[15*width+25],1);
 });
+test('quitar sombras requiere contraste y detiene la máscara en la costura',()=>{
+ const c=app();vm.runInContext(fs.readFileSync('www/local-cutout.js','utf8'),c);
+ const w=50,h=30,data=new Uint8ClampedArray(w*h*4),mask=new Uint8Array(w*h);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  const light=x<15?245:x<24?240-(x-15)*10:60,i=y*w+x;
+  data.set([light,light,light,255],i*4);mask[i]=Number(x<15);
+ }
+ assert.equal(c.clearBackdropShadow({width:w,height:h,data},mask),9*h);
+ assert.equal(mask[23],1);assert.equal(mask[24],0);
+ data.fill(255);mask.fill(0);mask[0]=1;
+ assert.equal(c.clearBackdropShadow({width:w,height:h,data},mask),0);
+});
