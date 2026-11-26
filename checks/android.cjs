@@ -109,6 +109,16 @@ async function main(){
   })()`);
   assert.deepEqual(combined,{picked:[1,2,3],photoPreserved:true,shoeHalves:[0,1],fit:true,undo:true});
   console.log('PASS native local group handoff, pair fitting and undo.');
+  const collar=await evaluate(`(async()=>{
+   active=layers.findIndex(l=>l.item.category==='Superior');syncLayers();
+   await $('#realNeck').onclick();
+   const selected=layers[active],status=$('#neckStatus').textContent;
+   return {visible:!$('#realNeck').hidden,enabled:!$('#realNeck').disabled,
+    sane:selected.neckMask?validVisionMask(selected.neckMask):status.includes('No se distinguió piel visible'),
+    noPants:!layers.some(l=>l.item.category!=='Superior'&&l.neckMask)};
+  })()`);
+  assert.deepEqual(collar,{visible:true,enabled:true,sane:true,noPants:true});
+  console.log('PASS native neckline detection or safe fallback; other garments untouched.');
   const nativeCut=await evaluate(`(async()=>{
    const pose=analysis,torso=[11,12,23,24].map(i=>pose[i]);
    const px=torso.reduce((sum,p)=>sum+p.x,0)/4,py=torso.reduce((sum,p)=>sum+p.y,0)/4;

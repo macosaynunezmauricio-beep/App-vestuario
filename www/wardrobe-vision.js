@@ -69,6 +69,7 @@ async function detectForeground(points,automatic=false){
   if(!pose.length)throw Error('No se encontró una postura clara. Puedes pintar las zonas al frente.');
   const {classes}=await window.Capacitor.Plugins.WardrobeVision.analyze({mode:'person',image:source.split(',')[1]});
   if(!current())return;
+  portraitSemantics={source,classes};
   const mask=personForeground(classes,pose);
   if(!mask)throw Error('No se distinguieron esas zonas. Puedes retocarlas con el pincel.');
   if(!automatic)remember();
@@ -92,4 +93,31 @@ function bindWardrobeVision(){
   if(automaticFront){remember();resetFront();rebuildOcclusion();syncLayers();}
   else detectForeground(null);
  };
+}
+
+let neckRequest=0,portraitSemantics=null;
+async function toggleRealNeck(){
+ const layer=layers[active],source=personSource,version=sceneVersion;
+ if(!layer||!source||!window.Capacitor?.Plugins?.WardrobeVision)return;
+ if(layer.neckMask){deleteRealNeck();return;}
+ const request=++neckRequest;$('#realNeck').disabled=true;
+ $('#neckStatus').textContent='Buscando la piel visible del cuello…';
+ const current=()=>version===sceneVersion&&source===personSource&&request===neckRequest&&layers[active]===layer;
+ try{
+  const pose=await detectPose(source);
+  if(!current())return;
+  if(!pose.length)throw Error('No se distinguió el cuello. Puedes usar la abertura manual.');
+  const classes=portraitSemantics?.source===source?portraitSemantics.classes:
+   (await window.Capacitor.Plugins.WardrobeVision.analyze({mode:'person',image:source.split(',')[1]})).classes;
+  if(!current())return;
+  const mask=exposedNeck(classes,pose);
+  if(!mask)throw Error('No se distinguió piel visible en el cuello. Prueba con una foto con el cuello descubierto.');
+  changeLayer(currentLayer=>{currentLayer.neckMask=mask;});
+  $('#neckStatus').textContent='Solo se recupera la piel visible; la ropa original no se restaura.';
+ }catch(error){if(current())$('#neckStatus').textContent=error.message||'No se pudo detectar el cuello.';}
+ finally{if(request===neckRequest){$('#realNeck').disabled=false;}}
+}
+function deleteRealNeck(){
+ changeLayer(layer=>{delete layer.neckMask;});
+ $('#neckStatus').textContent='';
 }

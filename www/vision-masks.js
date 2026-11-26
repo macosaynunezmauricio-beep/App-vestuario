@@ -138,3 +138,30 @@ function waistSeam(photo,labels,w,h,joints){
  line.fill(line[start],0,start);line.fill(line[end],end+1);
  return line;
 }
+
+// Restore only visible skin connected to the lower face, not the shirt in the original.
+function exposedNeck(classes,points){
+ const labels=unpackMask(classes),{w,h}=classes,a=points?.[11],b=points?.[12],nose=points?.[0];
+ if([a,b,nose].some(p=>!p||p.visibility<.60||![p.x,p.y].every(Number.isFinite)))return null;
+ const span=Math.abs(a.x-b.x)*w,cy=(a.y+b.y)*h/2,cx=(a.x+b.x)*w/2;
+ if(span<9||cy<=nose.y*h)return null;
+ const x0=Math.max(0,Math.floor(cx-span*.23)),x1=Math.min(w-1,Math.ceil(cx+span*.23));
+ const y0=Math.max(0,Math.floor(nose.y*h+(cy-nose.y*h)*.37)),y1=Math.min(h-1,Math.ceil(cy+span*.15));
+ const alpha=new Uint8Array(labels.length),seen=new Uint8Array(labels.length),q=[];
+ function add(x,y){
+  if(x<x0||x>x1||y<y0||y>y1)return;
+  const i=y*w+x;
+  if(!seen[i]&&(labels[i]===2||labels[i]===3)){seen[i]=1;q.push(i);}
+ }
+ for(let y=y0;y<=Math.min(y1,y0+Math.round(span*.13));y++)
+  for(let x=Math.max(x0,Math.floor(nose.x*w-span*.09));x<=Math.min(x1,nose.x*w+span*.09);x++)add(x,y);
+ let neck=0;
+ for(let j=0;j<q.length;j++){
+  const i=q[j],x=i%w,y=Math.floor(i/w);add(x-1,y);add(x+1,y);add(x,y-1);add(x,y+1);
+  if(y<cy-span*.20||labels[i]!==2)continue;
+  // Feather one mask pixel at the skin–clothing boundary.
+  const edge=[i-1,i+1,i-w,i+w].some(k=>labels[k]!==2&&labels[k]!==3);
+  alpha[i]=edge?145:255;if(y>cy-span*.09)neck++;
+ }
+ return neck>=4?packMask(w,h,alpha):null;
+}

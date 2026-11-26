@@ -50,3 +50,22 @@ test('long trousers reach ankles rather than hitting an arbitrary stretch cap',(
  assert.ok(Math.abs(height-(.9-.45)*900*1.13)<1);
  points[23].visibility=.1;assert.equal(c.bodyPlacement(points,'Inferior',.6,600,900),null);
 });
+
+test('cada calzado se ajusta a su silueta independiente y no a un pie fuera del cuadro',()=>{
+ const c=app();vm.runInContext(fs.readFileSync('www/body-fit.js','utf8'),c);
+ const p=Array.from({length:33},()=>({x:.5,y:.5,visibility:1}));
+ for(const [i,x,y] of [[27,.33,.78],[29,.33,.8],[31,.30,.88],[28,.66,.78],[30,.66,.8],[32,.69,.88]])
+  Object.assign(p[i],{x,y});
+ const w=100,h=120,mask=new Uint8Array(w*h);
+ for(let y=93;y<111;y++)for(const cent of [32,67])for(let x=cent-5;x<=cent+5;x++)mask[y*w+x]=1;
+ const outline={w,h,pixels:String.fromCharCode(...mask)};
+ for(const side of [0,1]){
+  const old=c.bodyPlacement(p,'Calzado',.62,720,960,side);
+  const fit=c.shoeOutlinePlacement(old,outline,p,side,720,960,.62);
+  assert.notEqual(fit,old);
+  assert.ok(side?fit.x>60:fit.x<40);assert.ok(fit.size>=5);
+  assert.equal(c.shoeOutlinePlacement(old,{...outline,pixels:''},p,side,720,960,.62),old);
+ }
+ assert.equal(c.validSceneLight([-.21,.085,0,0,0,0,0,0,0]),true);
+ assert.equal(c.validSceneLight([-.3,0,0,0,0,0,0,0,0]),false);
+});

@@ -44,6 +44,7 @@ function meshTriangle(ctx,image,src,dst){
  ctx.transform(xx,yx,xy,yy,xt,yt);ctx.drawImage(image,0,0);ctx.restore();
 }
 let garmentSurface=null;
+const neckCanvases=new WeakMap();
 const preparedGarments=new WeakMap();
 function necklinePath(center,width,depth){
  const half=width/2;
@@ -52,8 +53,8 @@ function necklinePath(center,width,depth){
 }
 function garmentTexture(layer){
  const bitmap=layer.bitmap;
- if(!layer.flipX&&!layer.neckDepth&&!layer.sceneShade)return bitmap;
- const key=[!!layer.flipX,layer.neckCenter,layer.neckWidth,layer.neckDepth,layer.sceneShade].join(',');
+ if(!layer.flipX&&!layer.neckDepth&&!layer.sceneShade&&!layer.sceneLight)return bitmap;
+ const key=[!!layer.flipX,layer.neckCenter,layer.neckWidth,layer.neckDepth,layer.sceneShade,layer.sceneLight].join(',');
  const cached=preparedGarments.get(bitmap);
  if(cached?.key===key)return cached.image;
  const image=document.createElement('canvas');image.width=bitmap.width;image.height=bitmap.height;
@@ -67,7 +68,13 @@ function garmentTexture(layer){
   });
   ctx.closePath();ctx.fill();
  }
- if(layer.sceneShade){
+ if(validSceneLight(layer.sceneLight)){
+  ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation='source-atop';
+  const light=document.createElement('canvas');light.width=light.height=3;
+  const mini=light.getContext('2d'),rgba=mini.createImageData(3,3);
+  layer.sceneLight.forEach((v,i)=>{rgba.data.fill(v>0?255:0,4*i,4*i+3);rgba.data[4*i+3]=Math.round(Math.abs(v)*255);});
+  mini.putImageData(rgba,0,0);ctx.imageSmoothingEnabled=true;ctx.drawImage(light,0,0,image.width,image.height);
+ }else if(layer.sceneShade){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.globalCompositeOperation='source-atop';
   const gradient=ctx.createLinearGradient(0,0,image.width,0),shade='rgba(0,0,0,'+Math.abs(layer.sceneShade)+')';
@@ -80,7 +87,7 @@ function garmentTexture(layer){
 function renderGarment(ctx,layer,width,height){
  const texture=garmentTexture(layer);
  const f=garmentFrame(layer,width,height);
- if(!layer.mesh){
+ if(!layer.mesh&&!layer.neckMask){
   ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.angle);ctx.globalAlpha=layer.opacity??1;ctx.filter='brightness('+(layer.brightness??1)+')';
   ctx.drawImage(texture,-f.w/2,-f.h/2,f.w,f.h);ctx.restore();return;
  }
@@ -89,7 +96,8 @@ function renderGarment(ctx,layer,width,height){
  if(garmentSurface.width!==width||garmentSurface.height!==height){garmentSurface.width=width;garmentSurface.height=height;}
  const targetCtx=garmentSurface.getContext('2d');targetCtx.clearRect(0,0,width,height);
  targetCtx.save();targetCtx.translate(f.x,f.y);targetCtx.rotate(f.angle);
- const count=8;
+ if(!layer.mesh)targetCtx.drawImage(texture,-f.w/2,-f.h/2,f.w,f.h);
+ const count=layer.mesh?8:0;
  const dest=(u,v)=>{const p=meshSample(layer.mesh,u,v);return {x:(p.x-.5)*f.w,y:(p.y-.5)*f.h};};
  for(let y=0;y<count;y++)for(let x=0;x<count;x++){
   const uv=[[x/count,y/count],[(x+1)/count,y/count],[(x+1)/count,(y+1)/count],[x/count,(y+1)/count]];
@@ -97,6 +105,15 @@ function renderGarment(ctx,layer,width,height){
   for(const ids of [[0,1,2],[0,2,3]])meshTriangle(targetCtx,texture,ids.map(i=>source[i]),ids.map(i=>target[i]));
  }
  targetCtx.restore();
+ if(layer.neckMask){
+  let mask=neckCanvases.get(layer.neckMask);
+  if(!mask){
+   mask=alphaCanvas(layer.neckMask.w,layer.neckMask.h,unpackMask(layer.neckMask));
+   neckCanvases.set(layer.neckMask,mask);
+  }
+  targetCtx.save();targetCtx.globalCompositeOperation='destination-out';
+  targetCtx.drawImage(mask,0,0,width,height);targetCtx.restore();
+ }
  ctx.save();ctx.globalAlpha=layer.opacity??1;ctx.filter='brightness('+(layer.brightness??1)+')';ctx.drawImage(garmentSurface,0,0);ctx.restore();
 }
 function meshHit(layer,point,width,height){

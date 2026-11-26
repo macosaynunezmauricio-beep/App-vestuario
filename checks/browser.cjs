@@ -61,14 +61,35 @@ const server=http.createServer((req,res)=>{
  await page.click('#collarTools summary');await page.click('#toggleCollar');
  assert.equal(await page.evaluate(()=>{const tex=garmentTexture(layers[2]);return tex.getContext('2d').getImageData(tex.width*.5,tex.height*.12,1,1).data[3];}),0);
  assert.deepEqual(await page.evaluate(()=>layers.map(l=>l.item.category)),['Calzado','Inferior','Superior']);
+ // A native-style response changes only the selected layer; the photo and other layers are not modified.
+ await page.evaluate(()=>{
+  const points=[];for(const [i,x,y] of [[0,32,23],[11,18,40],[12,46,40]])points[i]={x:x/64,y:y/96,visibility:.99};
+  const labels=new Uint8Array(64*96).fill(4);
+  for(let y=29;y<=40;y++)for(let x=29;x<=35;x++)labels[y*64+x]=y<34?3:2;
+  window.Capacitor={Plugins:{BodyPose:{detect:async()=>({points})},WardrobeVision:{analyze:async()=>({classes:packMask(64,96,labels)})}}};
+  syncLayers();
+ });
+ await page.getByRole('button',{name:'Conservar mi cuello',exact:true}).click();
+ await page.waitForFunction(()=>!!layers[2].neckMask);
+ const preview=await page.evaluate(async()=>{
+  const blank=document.createElement('canvas'),live=tctx.getImageData(0,0,tc.width,tc.height).data;
+  blank.width=tc.width;blank.height=tc.height;
+  const bitmap=await createImageBitmap(await compositePng());
+  const ctx=blank.getContext('2d');ctx.drawImage(bitmap,0,0);bitmap.close();
+  return ctx.getImageData(0,0,tc.width,tc.height).data.every((v,i)=>v===live[i]);
+ });
+ assert.equal(preview,true,'export and preview agree, including the neckline');
+ await page.click('#undoLayer');assert.equal(await page.evaluate(()=>layers[2].neckMask),undefined);
+ await page.click('#redoLayer');assert.equal(await page.evaluate(()=>!!layers[2].neckMask),true);
+ await page.evaluate(()=>{delete window.Capacitor;});
  await page.fill('#lookName','Sábado');await page.click('#saveLook');await page.waitForFunction(()=>$('#tryStatus').textContent==='Conjunto guardado.');
  const look=await page.evaluate(async()=>{const b={format:'mi-armario',version:1,clothes:await all('clothes'),outfits:await all('outfits')};validateBackup(b);return b.outfits[0];});assert.deepEqual(look.composition.transforms[2].mesh,mesh);
  await context.setOffline(false);await page.reload();await page.waitForFunction(()=>!!db);await context.setOffline(true);await page.evaluate(async()=>{showTab('tryon');await render();});await page.click('#reopen summary');await page.click('#loadLook');await page.waitForFunction(()=>layers.length===3);
- assert.deepEqual(await page.evaluate(()=>layers[2].mesh),mesh);assert.equal(await page.evaluate(()=>occlusion.length),1);
+ assert.deepEqual(await page.evaluate(()=>layers[2].mesh),mesh);assert.equal(await page.evaluate(()=>occlusion.length),1);assert.equal(await page.evaluate(()=>!!layers[2].neckMask),true);
  // Mesh rendering has opaque interior, so no transparency seams in a solid garment.
  const alpha=await page.evaluate(()=>{
   const canvas=document.createElement('canvas');canvas.width=300;canvas.height=400;
-  renderGarment(canvas.getContext('2d'),{...layers[2],neckDepth:undefined,x:50,y:50,size:80,rotation:0,mesh:flatGarmentMesh()},300,400);
+  renderGarment(canvas.getContext('2d'),{...layers[2],neckDepth:undefined,neckMask:undefined,x:50,y:50,size:80,rotation:0,mesh:flatGarmentMesh()},300,400);
   const data=canvas.getContext('2d').getImageData(80,100,140,200).data;
   let min=255;for(let i=3;i<data.length;i+=4)min=Math.min(min,data[i]);return min;
  });assert.ok(alpha>=245,'opaque mesh interior should not show grid seams: '+alpha);

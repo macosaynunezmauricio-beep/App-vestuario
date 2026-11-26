@@ -249,3 +249,76 @@ function fitSilhouette(mesh,outline,points,category,layer,width,height,mask){
  }
  return validGarmentMesh(result)?result:mesh;
 }
+
+// Fit each shoe to its own visible footprint, not a rectangular sticker centred on the ankle.
+function shoeOutlinePlacement(fit,outline,points,side,width,height,aspect){
+ if(!outline||!fit||!(aspect>0))return fit;
+ const feet=[[27,29,31],[28,30,32]].map(ids=>ids.map(i=>points[i])).sort((a,b)=>a[0].x-b[0].x);
+ const [ankle,heel,toe]=feet[side===1?1:0],{w,h,pixels}=outline;
+ const delta=toe.y-ankle.y;
+ if(delta<.035||Math.abs(ankle.x-toe.x)>.14)return fit;
+ const y0=Math.max(1,Math.round((Math.min(ankle.y,heel.y)-delta*.06)*h));
+ const y1=Math.min(h-2,Math.ceil((toe.y+delta*.42)*h));
+ const seen=[],angle=fit.rotation*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle);
+ const found=(x,y)=>x>0&&x<w-1&&pixels.charCodeAt(y*w+x)===1;
+ let edgeRows=0;
+ for(let y=y0;y<=y1;y++){
+  const t=Math.max(0,Math.min(1,((y+.5)/h-ankle.y)/delta));
+  const x=Math.round((ankle.x+(toe.x-ankle.x)*t)*w);
+  if(!found(x,y))continue;
+  let left=x,right=x;
+  while(found(left-1,y))left--;while(found(right+1,y))right++;
+  if(left<=1||right>=w-2||right-left<2||right-left>w*.15)continue;
+  if(y>toe.y*h)edgeRows++;
+  for(let col=left;col<=right;col++){
+   const px=(col+.5)*width/w,py=(y+.5)*height/h;
+   seen.push([px*cos+py*sin,-px*sin+py*cos]);
+  }
+ }
+ // Don't guess when segmented feet touch, fall outside the photo, or hide from the camera.
+ if(seen.length<12||edgeRows<1)return fit;
+ const limits=axis=>{
+  const sorted=seen.map(p=>p[axis]).sort((a,b)=>a-b);
+  return [sorted[Math.floor(sorted.length*.012)],sorted[Math.ceil((sorted.length-1)*.988)]];
+ };
+ const [u0,u1]=limits(0),[v0,v1]=limits(1);
+ const pad=Math.max(width/w,height/h)*.7, targetW=u1-u0+2*pad,targetH=v1-v0+2*pad;
+ const initialW=fit.size*width/100, stretch=targetH*aspect/targetW;
+ if(targetW<initialW*.64||targetW>initialW*1.68||stretch<.54||stretch>1.75)return fit;
+ const u=(u0+u1)/2,v=(v0+v1)/2, x=(u*cos-v*sin)*100/width,y=(u*sin+v*cos)*100/height;
+ if(Math.abs(x-fit.x)>6||Math.abs(y-fit.y)>5)return fit;
+ return {...fit,x,y,size:Math.max(5,Math.min(22,targetW*100/width)),stretch};
+}
+
+// Broad brightness differences from interior torso patches only. Never transfer the old
+// garment's texture or color: a median and a low-amplitude grid retain the chosen fabric.
+const portraitLightingGrid=new WeakMap();
+function torsoLightingGrid(photo,points){
+ if(!photo)return;
+ if(portraitLightingGrid.has(photo))return portraitLightingGrid.get(photo);
+ const q=[11,12,23,24].map(i=>points[i]);
+ if(q.some(p=>!p||p.visibility<.65||![p.x,p.y].every(Number.isFinite)))return;
+ const rows=[q.slice(0,2),q.slice(2)].map(a=>a.sort((a,b)=>a.x-b.x));
+ const c=document.createElement('canvas');c.width=c.height=48;
+ const ctx=c.getContext('2d');ctx.drawImage(photo,0,0,48,48);
+ const data=ctx.getImageData(0,0,48,48).data;
+ const grid=[];
+ for(const v of [.22,.47,.71])for(const u of [.21,.50,.79]){
+  const value=[];
+  for(const dy of [-.065,0,.065])for(const dx of [-.065,0,.065]){
+   const pos=k=>{
+    const [a,b]=rows.map(([l,r])=>l[k]+(r[k]-l[k])*(u+dx));
+    return Math.max(0,Math.min(47,Math.round((a+(b-a)*(v+dy))*47)));
+   };
+   const n=4*(pos('x')+pos('y')*48);value.push(data[n]*.2126+data[n+1]*.7152+data[n+2]*.0722);
+  }
+  grid.push(value.sort((a,b)=>a-b)[4]);
+ }
+ const median=grid.slice().sort((a,b)=>a-b)[4];
+ const gains=grid.map(v=>Math.round(Math.max(-.21,Math.min(.085,(v-median)/Math.max(70,median)*.75))*1000)/1000);
+ const result=gains.some(v=>Math.abs(v)>.025)?gains:undefined;
+ portraitLightingGrid.set(photo,result);return result;
+}
+function validSceneLight(value){
+ return Array.isArray(value)&&value.length===9&&value.every(v=>Number.isFinite(v)&&v>=-.21&&v<=.085);
+}

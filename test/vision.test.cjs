@@ -32,3 +32,15 @@ test('las manos y la cara pasan delante conservando las mangas y el fondo',()=>{
  assert.equal(alpha[50*w+15],0);assert.equal(alpha[73*w+48],0);
  assert.equal(alpha[29*w+32],255);assert.equal(alpha[55*w+53],0);assert.ok(alpha[69*w+57]>200);assert.equal(alpha[14*w+3],0);
 });
+test('el cuello recupera solo piel visible conectada al rostro y no la tela anterior',()=>{
+ const w=64,h=96,labels=new Uint8Array(w*h).fill(4),p=[];
+ for(const [i,x,y] of [[0,32,16],[11,18,37],[12,46,37]])
+  p[i]={x:x/w,y:y/h,visibility:.99};
+ for(let y=21;y<=36;y++)for(let x=29;x<=35;x++)labels[y*w+x]=y<29?3:2;
+ labels[39*w+36]=2; // isolated skin-like pixel, not connected to the lower face
+ const m=c.exposedNeck(c.packMask(w,h,labels),p);assert.ok(m);
+ const alpha=c.unpackMask(m);
+ assert.equal(alpha[32*w+32],255);assert.equal(alpha[36*w+32],145);
+ assert.equal(alpha[34*w+21],0);assert.equal(alpha[39*w+36],0);
+ labels.fill(4);assert.equal(c.exposedNeck(c.packMask(w,h,labels),p),null);
+});
