@@ -81,11 +81,13 @@ const server=http.createServer((req,res)=>{
  assert.equal(preview,true,'export and preview agree, including the neckline');
  await page.click('#undoLayer');assert.equal(await page.evaluate(()=>layers[2].neckMask),undefined);
  await page.click('#redoLayer');assert.equal(await page.evaluate(()=>!!layers[2].neckMask),true);
+ await page.locator('#garmentEdge').fill('3');
+ assert.equal(await page.evaluate(()=>layers[2].edgeTrim),3);
  await page.evaluate(()=>{delete window.Capacitor;});
  await page.fill('#lookName','Sábado');await page.click('#saveLook');await page.waitForFunction(()=>$('#tryStatus').textContent==='Conjunto guardado.');
  const look=await page.evaluate(async()=>{const b={format:'mi-armario',version:1,clothes:await all('clothes'),outfits:await all('outfits')};validateBackup(b);return b.outfits[0];});assert.deepEqual(look.composition.transforms[2].mesh,mesh);
  await context.setOffline(false);await page.reload();await page.waitForFunction(()=>!!db);await context.setOffline(true);await page.evaluate(async()=>{showTab('tryon');await render();});await page.click('#reopen summary');await page.click('#loadLook');await page.waitForFunction(()=>layers.length===3);
- assert.deepEqual(await page.evaluate(()=>layers[2].mesh),mesh);assert.equal(await page.evaluate(()=>occlusion.length),1);assert.equal(await page.evaluate(()=>!!layers[2].neckMask),true);
+ assert.deepEqual(await page.evaluate(()=>layers[2].mesh),mesh);assert.equal(await page.evaluate(()=>occlusion.length),1);assert.equal(await page.evaluate(()=>!!layers[2].neckMask),true);assert.equal(await page.evaluate(()=>layers[2].edgeTrim),3);
  // Mesh rendering has opaque interior, so no transparency seams in a solid garment.
  const alpha=await page.evaluate(()=>{
   const canvas=document.createElement('canvas');canvas.width=300;canvas.height=400;

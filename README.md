@@ -68,4 +68,4 @@ El flujo de GitHub Actions instala dependencias desde el lockfile, ejecuta Node 
 
 ### Integración fotográfica del probador
 
-En **Cuello de la camisa → Conservar mi cuello**, Android detecta la piel que ya es visible en la foto original y permite recuperarla para una camisa abierta; no recupera la camisa anterior. El ajuste también usa diferencias suaves de luz del torso y busca la silueta de cada zapato por separado. Las fotos y el cálculo quedan en el dispositivo. Sigue siendo un probador 2D: no reconstruye el fondo, la piel que no se ve ni la caída física de la tela.
+En **Cuello de la camisa → Conservar mi cuello**, Android detecta la piel que ya es visible en la foto original y permite recuperarla para una camisa abierta; no recupera la camisa anterior. El ajuste también usa diferencias suaves de luz del torso y busca la silueta de cada zapato por separado. Si el recorte trae un halo, **Ajustes de las prendas → Limpiar borde del recorte** permite reducirlo sin retocar el catálogo. Las fotos y el cálculo quedan en el dispositivo. Sigue siendo un probador 2D: no reconstruye el fondo, la piel que no se ve ni la caída física de la tela.

@@ -69,3 +69,13 @@ test('cada calzado se ajusta a su silueta independiente y no a un pie fuera del 
  assert.equal(c.validSceneLight([-.21,.085,0,0,0,0,0,0,0]),true);
  assert.equal(c.validSceneLight([-.3,0,0,0,0,0,0,0,0]),false);
 });
+
+test('limpiar bordes mantiene el blanco interior y no agranda un hueco cerrado',()=>{
+ const c=app(),w=100,h=100,data=new Uint8ClampedArray(w*h*4);
+ for(let y=10;y<90;y++)for(let x=10;x<90;x++)data.fill(255,(y*w+x)*4,(y*w+x)*4+4);
+ const at=(x,y)=>(y*w+x)*4+3;
+ data[at(50,50)]=0;
+ c.trimExteriorAlpha(data,w,h,4);
+ assert.equal(data[at(11,55)],0);assert.equal(data[at(15,55)],255);
+ assert.equal(data[at(50,51)],255);assert.equal(data[at(50,50)],0);
+});

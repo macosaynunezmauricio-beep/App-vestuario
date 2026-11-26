@@ -31,6 +31,7 @@ function validateBackup(backup) {
     (t.opacity===undefined||(Number.isFinite(t.opacity)&&t.opacity>=.2&&t.opacity<=1)) &&
     (t.brightness===undefined||(Number.isFinite(t.brightness)&&t.brightness>=.7&&t.brightness<=1.3)) &&
     (t.flipX===undefined||typeof t.flipX==='boolean') &&
+    (t.edgeTrim===undefined||(Number.isInteger(t.edgeTrim)&&t.edgeTrim>=0&&t.edgeTrim<=4)) &&
     (t.neckMask===undefined||validVisionMask(t.neckMask)) &&
     (t.sceneLight===undefined||validSceneLight(t.sceneLight)) &&
     (t.sceneShade===undefined||(Number.isFinite(t.sceneShade)&&Math.abs(t.sceneShade)<=.22)) &&

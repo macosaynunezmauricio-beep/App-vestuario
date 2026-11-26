@@ -51,16 +51,61 @@ function necklinePath(center,width,depth){
  return [[center-half,-.01],[center+half,-.01],[center+half,depth*.57],
   [center+half*.68,depth*.75],[center,depth],[center-half*.68,depth*.75],[center-half,depth*.57]];
 }
+// Shrink only contours that touch the transparent exterior, not white fabric or interior details.
+function trimExteriorAlpha(pixels,w,h,level){
+ const n=w*h,border=new Uint8Array(n),queue=new Int32Array(n),dist=new Float32Array(n);
+ let end=0;
+ function mark(i){
+  if(!border[i]&&pixels[i*4+3]<30){border[i]=1;queue[end++]=i;}
+ }
+ for(let x=0;x<w;x++){mark(x);mark(x+(h-1)*w);}
+ for(let y=1;y<h-1;y++){mark(y*w);mark(y*w+w-1);}
+ if(!end)return; // No actual cutout.
+ for(let j=0;j<end;j++){
+  const i=queue[j],x=i%w;
+  if(x>0)mark(i-1);if(x+1<w)mark(i+1);if(i>=w)mark(i-w);if(i+w<n)mark(i+w);
+ }
+ for(let i=0;i<n;i++)dist[i]=border[i]?0:1e6;
+ const diag=Math.SQRT2;
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  const i=y*w+x;
+  if(x>0)dist[i]=Math.min(dist[i],dist[i-1]+1);
+  if(y>0){
+   dist[i]=Math.min(dist[i],dist[i-w]+1);
+   if(x>0)dist[i]=Math.min(dist[i],dist[i-w-1]+diag);
+   if(x+1<w)dist[i]=Math.min(dist[i],dist[i-w+1]+diag);
+  }
+ }
+ for(let y=h-1;y>=0;y--)for(let x=w-1;x>=0;x--){
+  const i=y*w+x;
+  if(x+1<w)dist[i]=Math.min(dist[i],dist[i+1]+1);
+  if(y+1<h){
+   dist[i]=Math.min(dist[i],dist[i+w]+1);
+   if(x>0)dist[i]=Math.min(dist[i],dist[i+w-1]+diag);
+   if(x+1<w)dist[i]=Math.min(dist[i],dist[i+w+1]+diag);
+  }
+ }
+ const radius=Math.max(1.2,Math.min(w,h)*level/100);
+ for(let i=0;i<n;i++){
+  const t=Math.max(0,Math.min(1,(dist[i]-radius+.65)/1.4));
+  pixels[i*4+3]=Math.round(pixels[i*4+3]*t);
+ }
+}
 function garmentTexture(layer){
  const bitmap=layer.bitmap;
- if(!layer.flipX&&!layer.neckDepth&&!layer.sceneShade&&!layer.sceneLight)return bitmap;
- const key=[!!layer.flipX,layer.neckCenter,layer.neckWidth,layer.neckDepth,layer.sceneShade,layer.sceneLight].join(',');
+ if(!layer.flipX&&!layer.neckDepth&&!layer.sceneShade&&!layer.sceneLight&&!layer.edgeTrim)return bitmap;
+ const key=[!!layer.flipX,layer.neckCenter,layer.neckWidth,layer.neckDepth,layer.sceneShade,layer.sceneLight,layer.edgeTrim].join(',');
  const cached=preparedGarments.get(bitmap);
  if(cached?.key===key)return cached.image;
  const image=document.createElement('canvas');image.width=bitmap.width;image.height=bitmap.height;
  const ctx=image.getContext('2d');
  if(layer.flipX){ctx.translate(image.width,0);ctx.scale(-1,1);}
  ctx.drawImage(bitmap,0,0);
+ if(layer.edgeTrim){
+  const pixels=ctx.getImageData(0,0,image.width,image.height);
+  trimExteriorAlpha(pixels.data,image.width,image.height,layer.edgeTrim);
+  ctx.putImageData(pixels,0,0);
+ }
  if(layer.neckDepth){
   ctx.globalCompositeOperation='destination-out';ctx.beginPath();
   necklinePath(layer.neckCenter??.5,layer.neckWidth??.24,layer.neckDepth).forEach(([x,y],i)=>{
