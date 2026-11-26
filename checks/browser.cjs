@@ -172,6 +172,32 @@ const server=http.createServer((req,res)=>{
  assert.equal(await page.locator('#suggestion .shop-label').innerText(),'De tienda');
  await page.locator('#suggestion').getByRole('button',{name:'Guardar conjunto'}).click();
  await page.waitForFunction(()=>catalog.looks[0]?.items.some(item=>item.shopCandidate));
+ // Android bridge contract: a full-body photo yields editable suggestions, not automatic writes.
+ const synthetic=await page.evaluate(async()=>{
+  const w=100,h=160,labels=new Uint8Array(w*h),points=Array(33).fill(null);
+  for(const [i,x,y] of [[11,.35,.23],[12,.65,.23],[23,.40,.55],[24,.60,.55]])points[i]={x,y,visibility:.97};
+  const c=document.createElement('canvas');c.width=w;c.height=h;
+  const ctx=c.getContext('2d');ctx.fillStyle='#caa180';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#eee9d9';ctx.fillRect(30,32,40,56);ctx.fillStyle='#264c80';ctx.fillRect(30,88,40,52);
+  for(let y=32;y<140;y++)for(let x=30;x<70;x++)labels[y*w+x]=4;
+  window.Capacitor={isNativePlatform:()=>false,Plugins:{BodyPose:{detect:async()=>({points})},
+   WardrobeVision:{analyze:async()=>({classes:packMask(w,h,labels)})}}};
+  bindBatch();
+  return c.toDataURL().split(',')[1];
+ });
+ await page.click('#addClothes');
+ await page.setInputFiles('#photo',{name:'sintetica.png',mimeType:'image/png',buffer:Buffer.from(synthetic,'base64')});
+ await page.waitForFunction(()=>!$('#preview').hidden);await page.click('#detectBatch');
+ await page.waitForFunction(()=>batchDraft.length===2);
+ assert.equal(await page.evaluate(async()=>(await all('clothes')).length),before);
+ await page.locator('.batch-card input:not([type=checkbox])').first().fill('Camisa confirmada');
+ await page.getByRole('checkbox',{name:'Incluir prenda 2'}).uncheck();
+ await page.screenshot({path:'test-results/registro-multiple.png'});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.getByRole('button',{name:'Guardar 1 prenda'}).click();
+ await page.waitForFunction(()=>catalog.clothes.some(item=>item.name==='Camisa confirmada'));
+ const savedBatch=await page.evaluate(async()=>{const allItems=await all('clothes'),item=allItems.find(i=>i.name==='Camisa confirmada');return [allItems.length,item.category,!!item.original, item.image.slice(0,22)];});
+ assert.deepEqual(savedBatch,[before+1,'Superior',false,'data:image/png;base64,']);
  assert.deepEqual(errors,[]);console.log('PASS offline: wardrobe, named looks, 3 layers, two shoes, mesh/undo/redo, masks, gallery, repeated PNG.');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>server.close());

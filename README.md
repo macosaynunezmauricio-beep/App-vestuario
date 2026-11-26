@@ -28,6 +28,26 @@ El probador permite añadir prendas por miniatura, ajustarlas con la postura loc
   de nuevo tu foto. Si ya estabas editando un conjunto, se confirma antes de
   reemplazar sus capas y el cambio se puede deshacer.
 
+## Registrar varias prendas desde una foto
+
+En Android, entra a **Añadir prenda**, carga una foto de cuerpo entero y toca
+**Detectar varias prendas**. El sistema local propone recortes separados de
+parte superior, parte inferior y del calzado que pueda distinguir. Puedes
+cambiar el nombre, la categoría o el color y desmarcar lo que no quieras
+guardar. El lote se guarda junto y solo retiene los recortes confirmados, no
+la foto de cuerpo entero. No necesita conexión ni agrega nada antes de que
+confirmes.
+
+Una persona de frente, con luz uniforme, cintura visible y contraste entre la
+ropa y el fondo da el mejor punto de partida. Evita cruzar los brazos para que no queden huecos en la camisa. Si no se distingue una pieza, no
+se fuerza una sugerencia; puedes recortarla a mano desde la foto de origen.
+No es un detector general de capas superpuestas, vestidos o accesorios.
+
+La prueba Android usa una [foto de Marlon Schmeiski](https://www.pexels.com/photo/a-man-in-shorts-and-sneakers-standing-in-front-of-a-wall-28079589/)
+([licencia Pexels](https://www.pexels.com/license/)) descargada al entorno de
+pruebas, no al APK, y la foto preexistente de MediaPipe para descartar pies
+descalzos.
+
 ## Recortar una prenda en Android
 
 1. Abre la foto en el editor de recorte. Para ropa sobre una mesa o una percha, elige **Prenda suelta**. Si alguien la lleva puesta, elige **Parte superior puesta** o **Parte inferior puesta**.

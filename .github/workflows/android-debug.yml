@@ -2,7 +2,7 @@ name: Compilar APK de prueba
 on:
   workflow_dispatch:
   push:
-    branches: [main, review/mi-armario-5.4, review/mi-armario-integral, review/tryon-fidelity, review/local-garment-shaping, review/estudio-movil, review/ajuste-fotografico, review/estilo-minimalista, review/probador-articulado, review/recorte-y-primer-plano, review/conjuntos-locales]
+    branches: [main, review/mi-armario-5.4, review/mi-armario-integral, review/tryon-fidelity, review/local-garment-shaping, review/estudio-movil, review/ajuste-fotografico, review/estilo-minimalista, review/probador-articulado, review/recorte-y-primer-plano, review/conjuntos-locales, review/registro-multiple]
   pull_request:
     branches: [main]
 permissions:
@@ -79,6 +79,8 @@ jobs:
         run: |
           curl -fL --retry 3 https://storage.googleapis.com/mediapipe-assets/pose.jpg -o /tmp/pose.jpg
           echo 'c8a830ed683c0276d713dd5aeda28f415f10cd6291972084a40d0d8b934ed62b  /tmp/pose.jpg' | sha256sum -c -
+          curl -fL --retry 3 'https://images.pexels.com/photos/28079589/pexels-photo-28079589.jpeg?auto=compress&cs=tinysrgb&w=600' -o /tmp/outfit.jpg
+          echo 'fe027760b9e286dcff0d77aa3e7dd6b24df6ad297180e78c05c99084872bb0f9  /tmp/outfit.jpg' | sha256sum -c -
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
@@ -91,4 +93,4 @@ jobs:
           disable-animations: true
           script: |
             adb install -r build-test/app-debug.apk
-            node checks/android.cjs /tmp/pose.jpg
+            node checks/android.cjs /tmp/pose.jpg /tmp/outfit.jpg

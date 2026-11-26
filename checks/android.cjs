@@ -125,6 +125,33 @@ async function main(){
   })()`);
   assert.ok(nativeCut.kept>.001&&nativeCut.kept<.70,JSON.stringify(nativeCut));assert.equal(nativeCut.restored,255);
   assert.equal(nativeCut.png,'image/png');console.log('PASS interactive garment, clothing classes, undo / redo and transparent PNG',nativeCut.kept);
+  async function propose(file){
+   const input='data:image/jpeg;base64,'+fs.readFileSync(file).toString('base64');
+   return evaluate(`(async()=>{
+    const before=(await all('clothes')).length;openRegistration();
+    const blob=await (await fetch(${JSON.stringify(input)})).blob(),dt=new DataTransfer();
+    dt.items.add(new File([blob],'conjunto.jpg',{type:'image/jpeg'}));
+    $('#photo').files=dt.files;await choosePhoto($('#photo'));
+    await $('#detectBatch').onclick();
+    return {before,after:(await all('clothes')).length,status:$('#batchStatus').textContent,items:batchDraft.map(({image,...i})=>({...i,png:image.startsWith('data:image/png;base64,')}))};
+   })()`);
+  }
+  const bare=await propose(process.argv[2]);
+  assert.ok(!bare.items.some(i=>i.category==='Calzado'),JSON.stringify(bare));
+  const proposed=await propose(process.argv[3]);
+  assert.equal(proposed.before,proposed.after);
+  assert.deepEqual(proposed.items.map(i=>i.category),['Superior','Inferior','Calzado'],JSON.stringify(proposed));
+  assert.ok(proposed.items.every(i=>i.png),JSON.stringify(proposed));
+  const saved=await evaluate(`(async()=>{
+   const upper=$('.batch-card input:not([type=checkbox])');
+   upper.value='Playera de prueba en Android';upper.dispatchEvent(new Event('input'));
+   document.querySelectorAll('.batch-keep input')[1].click();
+   await $('#saveBatch').onclick();
+   const rows=await all('clothes');
+   return {count:rows.length,renamed:rows.some(r=>r.name==='Playera de prueba en Android'&&!r.original),gallery:catalog.clothes.length};
+  })()`);
+  assert.deepEqual(saved,{count:proposed.before+2,renamed:true,gallery:proposed.before+2});
+  console.log('PASS full-body registration offline: separate shirt, shorts and shoes; skip bare feet; save only confirmed crops.');
  }catch(error){
   try{console.error(adb('logcat','-d','-s','WardrobeVision:E').toString().slice(-6000));}catch{}
   try{console.error('Android app state:',await evaluate("({url:location.href,webview:navigator.userAgent,fit:document.querySelector('#fitStatus')?.textContent,export:document.querySelector('#tryStatus')?.textContent})"));}catch{}
