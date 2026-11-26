@@ -8,7 +8,7 @@ const server=http.createServer((req,res)=>{
 });
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined});
  try{
  const context=await browser.newContext({viewport:{width:412,height:915},reducedMotion:'reduce',acceptDownloads:true});const page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>!!db);
@@ -125,6 +125,53 @@ const server=http.createServer((req,res)=>{
  });
  assert.equal(pairTest.length,2);assert.deepEqual(pairTest.map(part=>part[0]),[0,1]);
  assert.ok(pairTest[0][1][0]>pairTest[0][1][2]&&pairTest[1][1][2]>pairTest[1][1][0]);
+ // Whole-look preview and single-piece replacement work offline, also without a body photo.
+ let nav=page.locator('nav [data-tab="style"]');
+ await page.evaluate(async()=>{
+  const shoe=(await all('clothes')).find(x=>x.id===3);
+  await put('clothes',{...shoe,id:4,name:'Tenis beige',color:'Beige',favorite:true});
+  await render();
+ });
+ await nav.click();await page.click('#generate');
+ const topAndBottom=await page.evaluate(()=>outfitDraft.slice(0,2).map(x=>x.id));
+ const firstShoe=await page.evaluate(()=>outfitDraft[2].id);
+ await page.locator('#suggestion button[aria-label^="Cambiar Tenis"]').click();
+ await page.locator('#swapChoices button').first().click();
+ assert.deepEqual(await page.evaluate(()=>outfitDraft.slice(0,2).map(x=>x.id)),topAndBottom);
+ assert.notEqual(await page.evaluate(()=>outfitDraft[2].id),firstShoe);
+ const picked=await page.evaluate(()=>outfitDraft.map(x=>x.id).sort());
+ await page.locator('#suggestion').getByRole('button',{name:'Guardar conjunto'}).click();
+ await page.waitForFunction(()=>document.querySelector('#homeLook h2')?.textContent==='Último conjunto'&&catalog.looks[0].occasion==='Casual');
+ await page.setViewportSize({width:320,height:800});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.screenshot({path:'test-results/combinacion.png'});
+ await page.locator('nav [data-tab="home"]').click();
+ assert.equal(await page.locator('#homeLook figure').count(),3);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.screenshot({path:'test-results/conjunto-en-inicio.png'});
+ page.once('dialog',dialog=>dialog.dismiss());
+ await page.getByRole('button',{name:'Probar este conjunto'}).click();
+ assert.equal(await page.locator('nav [aria-current="page"]').getAttribute('data-tab'),'home');
+ page.once('dialog',dialog=>dialog.accept());
+ await page.getByRole('button',{name:'Probar este conjunto'}).click();
+ await page.waitForFunction(()=>layers.length===3);
+ assert.deepEqual(await page.evaluate(()=>layers.map(l=>l.item.id).sort()),picked);
+ assert.equal(await page.evaluate(()=>!!personImage),true);
+ await page.click('#undoLayer');
+ assert.equal(await page.evaluate(()=>layers.length),2);
+ assert.equal(await page.inputValue('#lookName'),'Par completo');
+ await page.click('#redoLayer');assert.deepEqual(await page.evaluate(()=>layers.map(l=>l.item.id).sort()),picked);
+ // Try a store image without adding it to the closet.
+ const before=await page.evaluate(async()=>(await all('clothes')).length);
+ await page.click('#addClothes');await page.setInputFiles('#photo',path.join(__dirname,'fixtures/pantalon.png'));
+ await page.waitForFunction(()=>!$('#preview').hidden);
+ await page.fill('#name','Pantalón de tienda');await page.selectOption('#category','Inferior');
+ await page.click('#shopCandidate');
+ await page.waitForFunction(()=>outfitDraft.some(item=>item.shopCandidate===true));
+ assert.equal(await page.evaluate(async()=>(await all('clothes')).length),before);
+ assert.equal(await page.locator('#suggestion .shop-label').innerText(),'De tienda');
+ await page.locator('#suggestion').getByRole('button',{name:'Guardar conjunto'}).click();
+ await page.waitForFunction(()=>catalog.looks[0]?.items.some(item=>item.shopCandidate));
  assert.deepEqual(errors,[]);console.log('PASS offline: wardrobe, named looks, 3 layers, two shoes, mesh/undo/redo, masks, gallery, repeated PNG.');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>server.close());

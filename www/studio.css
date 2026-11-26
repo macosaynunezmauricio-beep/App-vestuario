@@ -744,3 +744,32 @@ nav .active::before {
   background: var(--accent);
   color: white;
 }
+
+.home-look { margin-top: 16px; }
+.look-name { margin: 4px 0 12px; }
+.look-composition {
+ display: grid;
+ grid-template-columns: repeat(3, minmax(0,1fr));
+ gap: 8px;
+ margin: 12px 0;
+}
+.look-piece { min-width: 0; margin: 0; }
+.look-piece img {
+ display: block;
+ width: 100%;
+ aspect-ratio: 4/5;
+ object-fit: contain;
+ padding: 7px;
+ background: var(--surface);
+ border: 1px solid var(--line);
+ border-radius: 10px;
+}
+.look-piece figcaption {
+ margin-top: 5px;
+ font-size: .85rem;
+ overflow-wrap: anywhere;
+}
+.look-piece .text-action { font-size: .82rem; padding-inline: 2px; min-height: 44px; }
+.look-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.swap-choices { padding-top: 10px; border-top: 1px solid var(--line); }
+.shop-label { display: block; color: var(--muted); font-size: .75rem; }

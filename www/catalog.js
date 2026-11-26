@@ -103,7 +103,9 @@ async function render(){
  replaceContents(colors,new Option('Todos',''),...Array.from(new Set(clothes.flatMap(c=>[c.color,c.secondaryColor]).filter(Boolean))).sort(names.compare).map(c=>new Option(c,c)));
  colors.value=oldColor;if(colors.selectedIndex<0)colors.selectedIndex=0;
  $('#lookCount').textContent=catalog.looks.length===1?'1 conjunto':catalog.looks.length+' conjuntos';
- drawCatalog();drawLookList();refreshLooks();
+ drawCatalog();drawLookList();drawHomeLook();refreshLooks();
+ if(outfitDraft.some(item=>!item.shopCandidate&&!catalog.clothes.some(c=>c.id===item.id)))outfitDraft=[];
+ if(!$('#style').classList.contains('hidden'))renderOutfitDraft();
 }
 function bindCatalog(){
  $('#favFilter').onclick=e=>{catalog.favoritesOnly=!catalog.favoritesOnly;e.currentTarget.setAttribute('aria-pressed',String(catalog.favoritesOnly));drawCatalog();};

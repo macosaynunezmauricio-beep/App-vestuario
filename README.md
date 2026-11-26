@@ -12,6 +12,22 @@ El probador permite añadir prendas por miniatura, ajustarlas con la postura loc
 
 [Instalación, controles, pruebas y limitaciones del estudio móvil](docs/estudio-movil.md)
 
+## Combinar tu ropa y probar prendas de tienda
+
+- **Combinar** propone una prenda superior, una inferior y calzado según la
+  ocasión, los colores y tus favoritas. Toca **Cambiar** bajo una pieza para
+  comparar alternativas sin cambiar las otras.
+- El último conjunto guardado aparece en **Inicio**, con prenda y calzado
+  juntos aunque todavía no hayas cargado una foto de cuerpo entero.
+- Para evaluar una compra, carga una foto en **Añadir prenda**, revisa el
+  recorte y la categoría, y pulsa **Combinar sin añadir al armario**. La pieza
+  queda marcada como **De tienda** en la vista y, si guardas el conjunto, en
+  él. No se agrega al catálogo. Se usa galería o cámara; la recepción directa
+  desde el menú Compartir de Android y las sugerencias de tiendas quedan pendientes.
+- **Probar conjunto** carga todas las piezas en el mismo probador, sin pedir
+  de nuevo tu foto. Si ya estabas editando un conjunto, se confirma antes de
+  reemplazar sus capas y el cambio se puede deshacer.
+
 ## Recortar una prenda en Android
 
 1. Abre la foto en el editor de recorte. Para ropa sobre una mesa o una percha, elige **Prenda suelta**. Si alguien la lleva puesta, elige **Parte superior puesta** o **Parte inferior puesta**.

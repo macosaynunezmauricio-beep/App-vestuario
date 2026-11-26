@@ -95,6 +95,20 @@ async function main(){
   })()`);
   assert.deepEqual(reopened,{removed:true,restored:true,count:3});
   console.log('PASS saved look restores native foreground and all three garments.');
+  const combined=await evaluate(`(async()=>{
+   const old=window.confirm;
+   window.confirm=()=>true;
+   try{
+    showTab('style');$('#generate').click();
+    const picked=outfitDraft.map(i=>i.id);
+    const photo=personSource;await tryGroup(outfitDraft);
+    const ready={picked,photoPreserved:personSource===photo,shoeHalves:layers.filter(l=>l.item.category==='Calzado').map(l=>l.shoeHalf),fit:layers.some(l=>l.mesh?.length===25)};
+    $('#undoLayer').click();ready.undo=layers.length===3&&editingLook!==null;
+    return ready;
+   }finally{window.confirm=old;}
+  })()`);
+  assert.deepEqual(combined,{picked:[1,2,3],photoPreserved:true,shoeHalves:[0,1],fit:true,undo:true});
+  console.log('PASS native local group handoff, pair fitting and undo.');
   const nativeCut=await evaluate(`(async()=>{
    const pose=analysis,torso=[11,12,23,24].map(i=>pose[i]);
    const px=torso.reduce((sum,p)=>sum+p.x,0)/4,py=torso.reduce((sum,p)=>sum+p.y,0)/4;
